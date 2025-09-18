@@ -21,8 +21,8 @@ class ProcessOperationJob implements ShouldQueue
         $this->dto = $dto;
     }
 
-    public function handle(OperationService $service)
+    public function handle(OperationService $service): void
     {
-        $service->create($this->dto);
+        $service->store($this->dto);
     }
 }

@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use App\DTO\OperationCreateDTO;
 use App\Jobs\ProcessOperationJob;
 use App\Models\User;
-use App\Services\OperationService;
 use Illuminate\Console\Command;
 
 class BalanceOperationCommand extends Command
@@ -14,7 +13,7 @@ class BalanceOperationCommand extends Command
 
     protected $description = 'Провести операцию с балансом пользователя';
 
-    public function handle(OperationService $service)
+    public function handle(): void
     {
         $user = User::where('email', $this->argument('email'))->first();
         if (! $user) {
@@ -29,10 +28,8 @@ class BalanceOperationCommand extends Command
             $this->argument('description')
         );
         try {
-            // Можно использовать Job для очереди:
-            // ProcessOperationJob::dispatch($dto);
-            $operationDTO = $service->create($dto);
-            $this->info('Операция проведена: '.$operationDTO->type.' '.$operationDTO->amount);
+            ProcessOperationJob::dispatch($dto);
+            $this->info('Операция поставлена в очередь: '.$dto->type.' '.$dto->amount);
         } catch (\Exception $e) {
             $this->error($e->getMessage());
         }

@@ -30,8 +30,24 @@ class OperationController extends Controller
             'description' => 'nullable|string',
         ]);
         $dto = new OperationCreateDTO(Auth::id(), $data['type'], $data['amount'], $data['description'] ?? '');
-        $operationDTO = $service->create($dto);
 
-        return response()->json($operationDTO);
+        if ($request->boolean('async')) {
+            // Асинхронная обработка через очередь
+            $service->create($dto); // диспатч джобы
+
+            return response()->json(['status' => 'queued']);
+        }
+
+        // Синхронная обработка
+        $operation = $service->store($dto);
+
+        return response()->json([
+            'id' => $operation->id,
+            'userId' => $operation->user_id,
+            'type' => $operation->type,
+            'amount' => $operation->amount,
+            'description' => $operation->description,
+            'createdAt' => $operation->created_at,
+        ]);
     }
 }
