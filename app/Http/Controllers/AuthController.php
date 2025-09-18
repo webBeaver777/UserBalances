@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\DTO\UserCreateDTO;
+use App\Http\Requests\LoginUserRequest;
+use App\Http\Requests\RegisterUserRequest;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
@@ -12,25 +14,18 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function register(Request $request, UserService $service): JsonResponse
+    public function register(RegisterUserRequest $registerUserRequest, UserService $userService): JsonResponse
     {
-        $data = $request->validate([
-            'name' => 'required|string',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|string|min:6',
-        ]);
-        $dto = new UserCreateDTO($data['name'], $data['email'], $data['password']);
-        $userDTO = $service->register($dto);
+        $data = $registerUserRequest->validated();
+        $userCreateDTO = new UserCreateDTO($data['name'], $data['email'], $data['password']);
+        $userDTO = $userService->register($userCreateDTO);
 
         return response()->json($userDTO);
     }
 
-    public function login(Request $request): JsonResponse
+    public function login(LoginUserRequest $loginUserRequest): JsonResponse
     {
-        $data = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string',
-        ]);
+        $data = $loginUserRequest->validated();
         $user = User::where('email', $data['email'])->first();
         if (! $user || ! Hash::check($data['password'], $user->password)) {
             return response()->json(['message' => 'Неверные данные'], 401);

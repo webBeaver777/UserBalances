@@ -14,15 +14,10 @@ class ProcessOperationJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public OperationCreateDTO $dto;
+    public function __construct(public OperationCreateDTO $dto) {}
 
-    public function __construct(OperationCreateDTO $dto)
+    public function handle(OperationService $operationService): void
     {
-        $this->dto = $dto;
-    }
-
-    public function handle(OperationService $service): void
-    {
-        $service->store($this->dto);
+        $operationService->store($this->dto);
     }
 }

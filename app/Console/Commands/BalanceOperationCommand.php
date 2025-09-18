@@ -21,15 +21,15 @@ class BalanceOperationCommand extends Command
 
             return;
         }
-        $dto = new OperationCreateDTO(
+        $operationCreateDTO = new OperationCreateDTO(
             $user->id,
             $this->argument('type'),
             (float) $this->argument('amount'),
             $this->argument('description')
         );
         try {
-            ProcessOperationJob::dispatch($dto);
-            $this->info('Операция поставлена в очередь: '.$dto->type.' '.$dto->amount);
+            ProcessOperationJob::dispatch($operationCreateDTO);
+            $this->info('Операция поставлена в очередь: '.$operationCreateDTO->type.' '.$operationCreateDTO->amount);
         } catch (\Exception $e) {
             $this->error($e->getMessage());
         }

@@ -6,19 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
-        Schema::create('operations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->enum('type', ['credit', 'debit']);
-            $table->decimal('amount', 15, 2);
-            $table->string('description')->nullable();
-            $table->timestamps();
+        Schema::create('operations', function (Blueprint $blueprint): void {
+            $blueprint->id();
+            $blueprint->foreignId('user_id')->constrained()->onDelete('cascade');
+            $blueprint->enum('type', ['credit', 'debit']);
+            $blueprint->decimal('amount', 15, 2);
+            $blueprint->string('description')->nullable();
+            $blueprint->timestamps();
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('operations');
     }

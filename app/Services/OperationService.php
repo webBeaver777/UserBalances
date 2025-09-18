@@ -10,26 +10,26 @@ use Illuminate\Support\Facades\DB;
 
 class OperationService
 {
-    public function create(OperationCreateDTO $dto): void
+    public function create(OperationCreateDTO $operationCreateDTO): void
     {
-        ProcessOperationJob::dispatch($dto);
+        ProcessOperationJob::dispatch($operationCreateDTO);
     }
 
-    public function store(OperationCreateDTO $dto): Operation
+    public function store(OperationCreateDTO $operationCreateDTO): Operation
     {
-        return DB::transaction(function () use ($dto) {
+        return DB::transaction(function () use ($operationCreateDTO) {
             $operation = Operation::create([
-                'user_id' => $dto->userId,
-                'type' => $dto->type,
-                'amount' => $dto->amount,
-                'description' => $dto->description,
+                'user_id' => $operationCreateDTO->userId,
+                'type' => $operationCreateDTO->type,
+                'amount' => $operationCreateDTO->amount,
+                'description' => $operationCreateDTO->description,
             ]);
 
-            $balance = Balance::where('user_id', $dto->userId)->lockForUpdate()->first();
-            if ($dto->type === 'debit') {
-                $balance->amount -= $dto->amount;
+            $balance = Balance::where('user_id', $operationCreateDTO->userId)->lockForUpdate()->first();
+            if ($operationCreateDTO->type === 'debit') {
+                $balance->amount -= $operationCreateDTO->amount;
             } else {
-                $balance->amount += $dto->amount;
+                $balance->amount += $operationCreateDTO->amount;
             }
             $balance->save();
 

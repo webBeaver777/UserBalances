@@ -13,7 +13,7 @@ class OperationQueueTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_async_operation_is_processed_by_queue()
+    public function test_async_operation_is_processed_by_queue(): void
     {
         config(['queue.default' => 'database']);
         $user = User::factory()->create();
@@ -21,12 +21,12 @@ class OperationQueueTest extends TestCase
         $this->actingAs($user);
 
         // Отправляем операцию асинхронно
-        $response = $this->postJson('/api/operations?async=1', [
+        $testResponse = $this->postJson('/api/operations?async=1', [
             'type' => 'debit',
             'amount' => 200,
             'description' => 'Async debit',
         ]);
-        $response->assertStatus(200)->assertJson(['status' => 'queued']);
+        $testResponse->assertStatus(200)->assertJson(['status' => 'queued']);
 
         // Операция не должна появиться сразу
         $this->assertDatabaseMissing('operations', [

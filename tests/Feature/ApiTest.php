@@ -12,7 +12,7 @@ class ApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_register_and_login_and_me()
+    public function test_register_and_login_and_me(): void
     {
         // Регистрация
         $response = $this->postJson('/api/register', [
@@ -39,7 +39,7 @@ class ApiTest extends TestCase
             ->assertJsonStructure(['id', 'name', 'email']);
     }
 
-    public function test_balance_and_operations()
+    public function test_balance_and_operations(): void
     {
         $user = User::factory()->create([
             'password' => Hash::make('password123'),
@@ -58,7 +58,7 @@ class ApiTest extends TestCase
             ->assertJsonIsArray();
     }
 
-    public function test_add_operation_and_balance_update()
+    public function test_add_operation_and_balance_update(): void
     {
         $user = User::factory()->create([
             'password' => Hash::make('password123'),
@@ -86,12 +86,12 @@ class ApiTest extends TestCase
         $this->assertEquals(80, Balance::where('user_id', $user->id)->first()->amount);
     }
 
-    public function test_logout()
+    public function test_logout(): void
     {
         $user = User::factory()->create();
         $this->actingAs($user, 'sanctum');
-        $response = $this->postJson('/api/logout');
-        $response->assertStatus(200)
+        $testResponse = $this->postJson('/api/logout');
+        $testResponse->assertStatus(200)
             ->assertJson(['message' => 'Выход выполнен']);
     }
 }

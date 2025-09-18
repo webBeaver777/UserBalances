@@ -2,14 +2,16 @@
 
 namespace App\Console;
 
+use App\Console\Commands\BalanceOperationCommand;
+use App\Console\Commands\UserAddCommand;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
 {
     protected $commands = [
-        \App\Console\Commands\UserAddCommand::class,
-        \App\Console\Commands\BalanceOperationCommand::class,
+        UserAddCommand::class,
+        BalanceOperationCommand::class,
     ];
 
     protected function schedule(Schedule $schedule)
@@ -17,7 +19,7 @@ class Kernel extends ConsoleKernel
         //
     }
 
-    protected function commands()
+    protected function commands(): void
     {
         $this->load(__DIR__.'/Commands');
     }

@@ -12,15 +12,15 @@ class UserAddCommand extends Command
 
     protected $description = 'Добавить пользователя';
 
-    public function handle(UserService $service)
+    public function handle(UserService $userService): void
     {
-        $dto = new UserCreateDTO(
+        $userCreateDTO = new UserCreateDTO(
             $this->argument('name'),
             $this->argument('email'),
             $this->argument('password')
         );
         try {
-            $userDTO = $service->register($dto);
+            $userDTO = $userService->register($userCreateDTO);
             $this->info('Пользователь добавлен: '.$userDTO->email);
         } catch (\Exception $e) {
             $this->error($e->getMessage());

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\DTO\OperationCreateDTO;
+use App\Http\Requests\StoreOperationRequest;
 use App\Models\Operation;
 use App\Services\OperationService;
 use Illuminate\Http\JsonResponse;
@@ -22,24 +23,20 @@ class OperationController extends Controller
         return response()->json($operations);
     }
 
-    public function store(Request $request, OperationService $service)
+    public function store(StoreOperationRequest $storeOperationRequest, OperationService $operationService)
     {
-        $data = $request->validate([
-            'type' => 'required|in:credit,debit',
-            'amount' => 'required|numeric|min:0.01',
-            'description' => 'nullable|string',
-        ]);
-        $dto = new OperationCreateDTO(Auth::id(), $data['type'], $data['amount'], $data['description'] ?? '');
+        $data = $storeOperationRequest->validated();
+        $operationCreateDTO = new OperationCreateDTO(Auth::id(), $data['type'], $data['amount'], $data['description'] ?? '');
 
-        if ($request->boolean('async')) {
+        if ($storeOperationRequest->boolean('async')) {
             // Асинхронная обработка через очередь
-            $service->create($dto); // диспатч джобы
+            $operationService->create($operationCreateDTO); // диспатч джобы
 
             return response()->json(['status' => 'queued']);
         }
 
         // Синхронная обработка
-        $operation = $service->store($dto);
+        $operation = $operationService->store($operationCreateDTO);
 
         return response()->json([
             'id' => $operation->id,

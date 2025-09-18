@@ -15,20 +15,20 @@ class OperationServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_store_creates_operation_and_updates_balance()
+    public function test_store_creates_operation_and_updates_balance(): void
     {
         $user = User::factory()->create();
         $balance = Balance::create(['user_id' => $user->id, 'amount' => 1000]);
 
-        $dto = new OperationCreateDTO(
+        $operationCreateDTO = new OperationCreateDTO(
             userId: $user->id,
             type: 'debit',
             amount: 200,
             description: 'Test debit'
         );
 
-        $service = app(OperationService::class);
-        $operation = $service->store($dto);
+        $operationService = app(OperationService::class);
+        $operation = $operationService->store($operationCreateDTO);
 
         $this->assertDatabaseHas('operations', [
             'user_id' => $user->id,
