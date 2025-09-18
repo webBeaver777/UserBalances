@@ -24,4 +24,32 @@ class UserService
 
         return new UserDTO($user->id, $user->name, $user->email);
     }
+
+    public function login(string $email, string $password): array
+    {
+        $user = User::where('email', $email)->first();
+        if (! $user || ! \Hash::check($password, $user->password)) {
+            return ['error' => true, 'message' => 'Неверные данные', 'status' => 401];
+        }
+        $token = $user->createToken('api-token')->plainTextToken;
+
+        return ['error' => false, 'message' => 'Успешно', 'token' => $token];
+    }
+
+    public function logout($user): void
+    {
+        $token = $user ? $user->currentAccessToken() : null;
+        if ($token) {
+            $token->delete();
+        }
+    }
+
+    public function me($user): array
+    {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+        ];
+    }
 }
