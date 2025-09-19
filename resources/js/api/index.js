@@ -27,7 +27,7 @@ export default {
     return api.post('/logout');
   },
   getUser() {
-    return api.get('/user');
+    return api.get('/me');
   },
   getBalance() {
     return api.get('/balance');
@@ -36,4 +36,3 @@ export default {
     return api.get('/operations', { params });
   },
 };
-

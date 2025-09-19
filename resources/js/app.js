@@ -23,5 +23,6 @@ app.use(router);
 // Восстановление авторизации при загрузке страницы
 const userStore = useUserStore();
 userStore.restore();
+userStore.fetchUser();
 
 app.mount('#app');

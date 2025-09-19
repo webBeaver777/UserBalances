@@ -21,6 +21,7 @@ export const useUserStore = defineStore('user', () => {
   function restore() {
     const savedUser = localStorage.getItem('user');
     const savedToken = localStorage.getItem('token');
+    console.log('restore: savedToken', savedToken, 'savedUser', savedUser);
     if (savedToken) {
       token.value = savedToken;
       if (savedUser && savedUser !== 'undefined') {
@@ -32,6 +33,7 @@ export const useUserStore = defineStore('user', () => {
       user.value = null;
       token.value = null;
     }
+    console.log('restore: token', token.value, 'user', user.value);
   }
 
   async function login(email, password) {
@@ -77,13 +79,16 @@ export const useUserStore = defineStore('user', () => {
   async function fetchUser() {
     try {
       const response = await api.getUser();
+      console.log('fetchUser: response', response);
       if (!response.data || !response.data.email) {
         await logout();
         return;
       }
       user.value = response.data;
       localStorage.setItem('user', JSON.stringify(response.data));
+      console.log('fetchUser: user', user.value);
     } catch (e) {
+      console.log('fetchUser: error', e);
       await logout();
     }
   }

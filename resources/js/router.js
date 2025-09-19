@@ -19,16 +19,26 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore();
-  if (to.meta.requiresAuth && !userStore.token) {
-    next('/login');
-  } else if ((to.path === '/login' || to.path === '/register') && userStore.token) {
-    next('/');
-  } else {
-    next();
+  // Восстановить токен, если пользователь не загружен
+  if (userStore.token && !userStore.user) {
+    await userStore.fetchUser();
   }
+  // Проверка защищённых маршрутов
+  if (to.meta.requiresAuth) {
+    if (!userStore.token || !userStore.user) {
+      await userStore.logout();
+      next('/login');
+      return;
+    }
+  }
+  // Если пользователь уже авторизован, не пускать на login/register
+  if ((to.path === '/login' || to.path === '/register') && userStore.token && userStore.user) {
+    next('/');
+    return;
+  }
+  next();
 });
 
 export default router;
-
