@@ -20,7 +20,8 @@ class UserAddCommand extends Command
             $this->argument('password')
         );
         try {
-            $userDTO = $userService->register($userCreateDTO);
+            $result = $userService->register($userCreateDTO);
+            $userDTO = $result['user'];
             $this->info('Пользователь добавлен: '.$userDTO->email);
         } catch (\Exception $e) {
             $this->error($e->getMessage());

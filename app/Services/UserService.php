@@ -23,6 +23,7 @@ class UserService
         ]);
         $token = $user->createToken('api-token')->plainTextToken;
         $userDTO = new UserDTO($user->id, $user->name, $user->email);
+
         return [
             'token' => $token,
             'user' => $userDTO,
@@ -37,6 +38,7 @@ class UserService
         }
         $token = $user->createToken('api-token')->plainTextToken;
         $userDTO = new UserDTO($user->id, $user->name, $user->email);
+
         return [
             'error' => false,
             'message' => 'Успешно',

@@ -23,7 +23,7 @@ class ApiTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'token',
-                'user' => ['id', 'name', 'email']
+                'user' => ['id', 'name', 'email'],
             ]);
 
         // Логин
@@ -35,7 +35,7 @@ class ApiTest extends TestCase
             ->assertJsonStructure([
                 'message',
                 'token',
-                'user' => ['id', 'name', 'email']
+                'user' => ['id', 'name', 'email'],
             ]);
 
         // Получение текущего пользователя
