@@ -2,9 +2,29 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import api from '../api';
 
+function saveUserToStorage(userData) {
+  localStorage.setItem('user', JSON.stringify(userData));
+}
+function saveTokenToStorage(token) {
+  localStorage.setItem('token', token);
+}
+function removeUserFromStorage() {
+  localStorage.removeItem('user');
+}
+function removeTokenFromStorage() {
+  localStorage.removeItem('token');
+}
+function getUserFromStorage() {
+  const savedUser = localStorage.getItem('user');
+  return savedUser && savedUser !== 'undefined' ? JSON.parse(savedUser) : null;
+}
+function getTokenFromStorage() {
+  return localStorage.getItem('token');
+}
+
 export const useUserStore = defineStore('user', () => {
   const user = ref(null);
-  const token = ref(localStorage.getItem('token') || null);
+  const token = ref(getTokenFromStorage() || null);
   const isAuthenticated = computed(() => !!token.value);
 
   function setUser(userData, userToken) {
@@ -14,26 +34,20 @@ export const useUserStore = defineStore('user', () => {
     }
     user.value = userData;
     token.value = userToken;
-    localStorage.setItem('token', userToken);
-    localStorage.setItem('user', JSON.stringify(userData));
+    saveTokenToStorage(userToken);
+    saveUserToStorage(userData);
   }
 
   function restore() {
-    const savedUser = localStorage.getItem('user');
-    const savedToken = localStorage.getItem('token');
-    console.log('restore: savedToken', savedToken, 'savedUser', savedUser);
+    const savedUser = getUserFromStorage();
+    const savedToken = getTokenFromStorage();
     if (savedToken) {
       token.value = savedToken;
-      if (savedUser && savedUser !== 'undefined') {
-        user.value = JSON.parse(savedUser);
-      } else {
-        user.value = null;
-      }
+      user.value = savedUser;
     } else {
       user.value = null;
       token.value = null;
     }
-    console.log('restore: token', token.value, 'user', user.value);
   }
 
   async function login(email, password) {
@@ -72,23 +86,20 @@ export const useUserStore = defineStore('user', () => {
     } catch (e) {}
     user.value = null;
     token.value = null;
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    removeTokenFromStorage();
+    removeUserFromStorage();
   }
 
   async function fetchUser() {
     try {
       const response = await api.getUser();
-      console.log('fetchUser: response', response);
       if (!response.data || !response.data.email) {
         await logout();
         return;
       }
       user.value = response.data;
-      localStorage.setItem('user', JSON.stringify(response.data));
-      console.log('fetchUser: user', user.value);
+      saveUserToStorage(response.data);
     } catch (e) {
-      console.log('fetchUser: error', e);
       await logout();
     }
   }

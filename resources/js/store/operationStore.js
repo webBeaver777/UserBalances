@@ -1,11 +1,34 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import api from '../api';
 
 export const useOperationStore = defineStore('operation', () => {
   const operations = ref([]);
   const loading = ref(false);
   const error = ref(null);
+  const search = ref('');
+  const sortDesc = ref(true);
+
+  const filteredSorted = computed(() => {
+    return sortAndFilter(operations.value, search.value, sortDesc.value);
+  });
+
+  function sortAndFilter(ops, searchValue, sortDescValue) {
+    let result = ops || [];
+    if (searchValue) {
+      result = result.filter(op => (op.description || '').toLowerCase().includes(searchValue.toLowerCase()));
+    }
+    result = result.slice().sort((a, b) => {
+      const da = new Date(a.created_at);
+      const db = new Date(b.created_at);
+      return sortDescValue ? db - da : da - db;
+    });
+    return result;
+  }
+
+  const totalAmount = computed(() => {
+    return filteredSorted.value.reduce((sum, op) => sum + (Number(op.amount) || 0), 0);
+  });
 
   async function fetchOperations(params = {}) {
     loading.value = true;
@@ -21,14 +44,24 @@ export const useOperationStore = defineStore('operation', () => {
     }
   }
 
-  function getFilteredSorted(desc, search) {
-    let ops = [...operations.value];
-    if (search) {
-      ops = ops.filter(o => (o.description || '').toLowerCase().includes(search.toLowerCase()));
-    }
-    ops.sort((a, b) => desc ? new Date(b.created_at) - new Date(a.created_at) : new Date(a.created_at) - new Date(b.created_at));
-    return ops;
+  function setSearch(val) {
+    search.value = val;
   }
 
-  return { operations, loading, error, fetchOperations, getFilteredSorted };
+  function toggleSort() {
+    sortDesc.value = !sortDesc.value;
+  }
+
+  return {
+    operations,
+    loading,
+    error,
+    fetchOperations,
+    search,
+    sortDesc,
+    filteredSorted,
+    totalAmount,
+    setSearch,
+    toggleSort
+  };
 });
