@@ -12,16 +12,18 @@ class ForceJsonResponse
      */
     public function handle(Request $request, Closure $next)
     {
-        // Принудительно добавляем заголовки
-        $request->headers->set('Accept', 'application/json');
-        if (! $request->headers->has('Content-Type')) {
-            $request->headers->set('Content-Type', 'application/json');
+        // Применять только к API-запросам
+        if (str_starts_with($request->getPathInfo(), '/api')) {
+            $request->headers->set('Accept', 'application/json');
+            if (! $request->headers->has('Content-Type')) {
+                $request->headers->set('Content-Type', 'application/json');
+            }
         }
-
         $response = $next($request);
-
-        // На всякий случай у ответа тоже ставим JSON
-        $response->headers->set('Content-Type', 'application/json');
+        // На всякий случай у ответа тоже ставим JSON только для API
+        if (str_starts_with($request->getPathInfo(), '/api')) {
+            $response->headers->set('Content-Type', 'application/json');
+        }
 
         return $response;
     }
