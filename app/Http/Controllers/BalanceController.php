@@ -13,13 +13,10 @@ class BalanceController extends Controller
 
     public function show(): JsonResponse
     {
-        $userId = Auth::id();
-        $balanceDTO = $this->balanceService->getBalance($userId);
-        $operations = $this->operationService->getRecentOperations($userId, 5);
-
+        $user = Auth::user();
+        $balance = $user->balance?->amount ?? 0;
         return response()->json([
-            'balance' => $balanceDTO,
-            'operations' => $operations,
+            'balance' => $balance,
         ]);
     }
 }

@@ -12,6 +12,8 @@ class Operation extends Model
         'type',
         'amount',
         'description',
+        'status',
+        'fail_reason',
     ];
 
     public function user(): BelongsTo

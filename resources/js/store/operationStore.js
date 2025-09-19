@@ -27,7 +27,15 @@ export const useOperationStore = defineStore('operation', () => {
   }
 
   const totalAmount = computed(() => {
-    return filteredSorted.value.reduce((sum, op) => sum + (Number(op.amount) || 0), 0);
+    // debit — это пополнение, credit — списание
+    return filteredSorted.value.reduce((sum, op) => {
+      if (op.type === 'debit') {
+        return sum + (Number(op.amount) || 0);
+      } else if (op.type === 'credit') {
+        return sum - (Number(op.amount) || 0);
+      }
+      return sum;
+    }, 0);
   });
 
   async function fetchOperations(params = {}) {

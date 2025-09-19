@@ -12,7 +12,7 @@
       <div v-else-if="error" class="text-danger my-4">
         {{ error }}
       </div>
-      <p v-else class="display-4 fw-bold mb-0">{{ balance?.amount ?? 0 }} ₽</p>
+      <p v-else class="display-4 fw-bold mb-0">{{ balance ?? 0 }} ₽</p>
     </div>
   </div>
 </template>
@@ -21,7 +21,7 @@
 export default {
   name: 'BalanceCard',
   props: {
-    balance: Object,
+    balance: Number,
     loading: Boolean,
     error: String
   }

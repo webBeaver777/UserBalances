@@ -30,30 +30,37 @@
                   Дата
                   <span v-if="operationStore.sortDesc">&#8595;</span><span v-else>&#8593;</span>
                 </th>
+                <th scope="col">Статус</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="op in operationStore.filteredSorted.slice(0, 5)" :key="op.id">
+              <tr v-for="op in operationStore.filteredSorted.slice(0, 5)" :key="op.id" :class="{ 'table-danger': op.status === 'failed' }">
                 <td>
-                  <span v-if="op.type === 'debit'" class="badge bg-danger">
-                    <i class="bi bi-arrow-down me-1"></i>Списание
-                  </span>
-                  <span v-else-if="op.type === 'credit'" class="badge bg-success">
+                  <span v-if="op.type === 'debit'" class="badge bg-success" data-bs-toggle="tooltip" title="Пополнение баланса">
                     <i class="bi bi-arrow-up me-1"></i>Пополнение
                   </span>
-                  <span v-else class="badge bg-secondary">{{ op.type }}</span>
+                  <span v-else-if="op.type === 'credit'" class="badge bg-danger" data-bs-toggle="tooltip" title="Списание с баланса">
+                    <i class="bi bi-arrow-down me-1"></i>Списание
+                  </span>
+                  <span v-else class="badge bg-secondary" data-bs-toggle="tooltip" title="Другое">{{ op.type }}</span>
                 </td>
                 <td :class="{
-                  'text-danger fw-bold': op.type === 'debit',
-                  'text-success fw-bold': op.type === 'credit'
-                }">
-                  {{ op.amount }} ₽
+                  'text-success fw-bold': op.type === 'debit',
+                  'text-danger fw-bold': op.type === 'credit'
+                }" data-bs-toggle="tooltip" :title="op.type === 'debit' ? 'Сумма увеличивает баланс' : op.type === 'credit' ? 'Сумма уменьшает баланс' : 'Сумма операции'">
+                  <span v-if="op.type === 'debit'">+{{ op.amount }} ₽</span>
+                  <span v-else-if="op.type === 'credit'">-{{ op.amount }} ₽</span>
+                  <span v-else>{{ op.amount }} ₽</span>
                 </td>
                 <td>{{ op.description }}</td>
                 <td>{{ formatDate(op.created_at) }}</td>
+                <td>
+                  <span v-if="op.status === 'success'" class="badge bg-success">Успешно</span>
+                  <span v-else class="badge bg-danger" data-bs-toggle="tooltip" :title="op.fail_reason || 'Ошибка'">Неудачно</span>
+                </td>
               </tr>
               <tr v-if="operationStore.filteredSorted.length === 0">
-                <td colspan="4" class="text-center text-muted">Нет операций</td>
+                <td colspan="5" class="text-center text-muted">Нет операций</td>
               </tr>
             </tbody>
           </table>
@@ -65,23 +72,46 @@
 
 <script setup>
 import { useOperationStore } from '../store/operationStore';
-import { onMounted } from 'vue';
+import { onMounted, onUnmounted, nextTick } from 'vue';
 import { formatDate } from '../utils/date';
 const operationStore = useOperationStore();
 
-onMounted(() => {
-  operationStore.fetchOperations();
+let intervalId = null;
+
+onMounted(async () => {
+  await operationStore.fetchOperations();
+  intervalId = setInterval(() => {
+    operationStore.fetchOperations();
+  }, 5000);
+  nextTick(() => {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      new window.bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  });
+});
+
+onUnmounted(() => {
+  if (intervalId) clearInterval(intervalId);
 });
 </script>
 
 <style scoped>
 .table {
   font-size: 1rem;
+  background: #fff;
 }
 .card-title {
   margin-bottom: 0.5rem;
 }
 th[scope="col"] {
   user-select: none;
+}
+td {
+  vertical-align: middle;
+}
+.badge {
+  font-size: 0.95em;
+  padding: 0.5em 0.8em;
 }
 </style>

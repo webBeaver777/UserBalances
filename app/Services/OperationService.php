@@ -6,8 +6,11 @@ use App\DTO\OperationCreateDTO;
 use App\Jobs\ProcessOperationJob;
 use App\Models\Balance;
 use App\Models\Operation;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class OperationService
 {
@@ -19,22 +22,33 @@ class OperationService
     public function store(OperationCreateDTO $operationCreateDTO): Operation
     {
         return DB::transaction(function () use ($operationCreateDTO) {
-            $operation = Operation::create([
-                'user_id' => $operationCreateDTO->userId,
-                'type' => $operationCreateDTO->type,
-                'amount' => $operationCreateDTO->amount,
-                'description' => $operationCreateDTO->description,
-            ]);
-
             $balance = Balance::where('user_id', $operationCreateDTO->userId)->lockForUpdate()->first();
-            if ($operationCreateDTO->type === 'debit') {
+            if ($operationCreateDTO->type === 'credit') {
+                if ($balance->amount < $operationCreateDTO->amount) {
+                    // Операция неудачна, фиксируем причину
+                    return Operation::create([
+                        'user_id' => $operationCreateDTO->userId,
+                        'type' => $operationCreateDTO->type,
+                        'amount' => $operationCreateDTO->amount,
+                        'description' => $operationCreateDTO->description,
+                        'status' => 'failed',
+                        'fail_reason' => 'Недостаточно средств на балансе',
+                    ]);
+                }
                 $balance->amount -= $operationCreateDTO->amount;
             } else {
                 $balance->amount += $operationCreateDTO->amount;
             }
             $balance->save();
-
-            return $operation;
+            // Операция успешна
+            return Operation::create([
+                'user_id' => $operationCreateDTO->userId,
+                'type' => $operationCreateDTO->type,
+                'amount' => $operationCreateDTO->amount,
+                'description' => $operationCreateDTO->description,
+                'status' => 'success',
+                'fail_reason' => null,
+            ]);
         });
     }
 
@@ -54,5 +68,30 @@ class OperationService
         }
 
         return $query->orderByDesc('created_at')->get();
+    }
+
+    public function operateByEmail(string $email, string $type, float $amount, string $description): Operation
+    {
+        $user = User::where('email', $email)->first();
+        if (! $user) {
+            throw new ModelNotFoundException("Пользователь с email '{$email}' не найден");
+        }
+        $balance = Balance::where('user_id', $user->id)->lockForUpdate()->first();
+        if (! $balance) {
+            throw new ModelNotFoundException('Баланс пользователя не найден');
+        }
+        if ($type === 'credit' && $balance->amount < $amount) {
+            throw ValidationException::withMessages([
+                'amount' => 'На балансе недостаточно средств для выполнения операции.',
+            ]);
+        }
+        $operationCreateDTO = new OperationCreateDTO(
+            userId: $user->id,
+            type: $type,
+            amount: $amount,
+            description: $description
+        );
+
+        return $this->store($operationCreateDTO);
     }
 }

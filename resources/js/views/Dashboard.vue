@@ -20,7 +20,7 @@
     </div>
     <div class="row justify-content-center">
       <div class="col-12 col-md-6 mb-4">
-        <BalanceCard :balance="{ amount: balance }" :loading="loading" :error="error" />
+        <BalanceCard :balance="balance" :loading="loading" :error="error" />
       </div>
       <div class="col-12 col-md-8">
         <OperationsTable :operations="operations" :loading="loading" :error="error" />
@@ -30,23 +30,23 @@
 </template>
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useBalanceStore } from '../store/balanceStore';
 import api from '../api';
 import BalanceCard from '../components/BalanceCard.vue';
 import OperationsTable from '../components/OperationsTable.vue';
+const balanceStore = useBalanceStore();
+const balance = computed(() => balanceStore.balance);
 const operations = ref([]);
 const loading = ref(true);
 const error = ref(null);
 const REFRESH_INTERVAL = 5000; // ms
 let timer = null;
 
-const balance = computed(() => {
-  return operations.value.reduce((sum, op) => sum + (Number(op.amount) || 0), 0);
-});
-
 async function fetchData() {
   loading.value = true;
   error.value = null;
   try {
+    await balanceStore.fetchBalance();
     const opsRes = await api.getOperations();
     operations.value = opsRes.data;
   } catch (e) {

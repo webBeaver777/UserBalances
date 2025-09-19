@@ -14,6 +14,8 @@ return new class extends Migration
             $blueprint->enum('type', ['credit', 'debit']);
             $blueprint->decimal('amount', 15, 2);
             $blueprint->string('description')->nullable();
+            $blueprint->enum('status', ['success', 'failed'])->default('success');
+            $blueprint->string('fail_reason')->nullable();
             $blueprint->timestamps();
         });
     }

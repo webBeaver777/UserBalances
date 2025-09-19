@@ -35,4 +35,7 @@ export default {
   getOperations(params = {}) {
     return api.get('/operations', { params });
   },
+  createOperation(data) {
+    return api.post('/operations', data);
+  },
 };
