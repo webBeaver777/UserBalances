@@ -34,8 +34,21 @@
             </thead>
             <tbody>
               <tr v-for="op in filteredSorted.slice(0, 5)" :key="op.id">
-                <td>{{ op.type }}</td>
-                <td>{{ op.amount }} ₽</td>
+                <td>
+                  <span v-if="op.type === 'debit'" class="badge bg-danger">
+                    <i class="bi bi-arrow-down me-1"></i>Списание
+                  </span>
+                  <span v-else-if="op.type === 'credit'" class="badge bg-success">
+                    <i class="bi bi-arrow-up me-1"></i>Пополнение
+                  </span>
+                  <span v-else class="badge bg-secondary">{{ op.type }}</span>
+                </td>
+                <td :class="{
+                  'text-danger fw-bold': op.type === 'debit',
+                  'text-success fw-bold': op.type === 'credit'
+                }">
+                  {{ op.amount }} ₽
+                </td>
                 <td>{{ op.description }}</td>
                 <td>{{ formatDate(op.created_at) }}</td>
               </tr>

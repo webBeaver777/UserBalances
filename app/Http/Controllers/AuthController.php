@@ -17,9 +17,12 @@ class AuthController extends Controller
     {
         $data = $registerUserRequest->validated();
         $userCreateDTO = new UserCreateDTO($data['name'], $data['email'], $data['password']);
-        $userDTO = $this->userService->register($userCreateDTO);
+        $result = $this->userService->register($userCreateDTO);
 
-        return response()->json($userDTO);
+        return response()->json([
+            'token' => $result['token'],
+            'user' => $result['user'],
+        ]);
     }
 
     public function login(LoginUserRequest $loginUserRequest): JsonResponse
@@ -30,7 +33,11 @@ class AuthController extends Controller
             return response()->json(['message' => $result['message']], $result['status']);
         }
 
-        return response()->json(['message' => $result['message'], 'token' => $result['token']]);
+        return response()->json([
+            'message' => $result['message'],
+            'token' => $result['token'],
+            'user' => $result['user'],
+        ]);
     }
 
     public function logout(Request $request): JsonResponse

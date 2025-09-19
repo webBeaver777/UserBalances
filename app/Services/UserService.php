@@ -9,7 +9,7 @@ use App\Models\User;
 
 class UserService
 {
-    public function register(UserCreateDTO $userCreateDTO): UserDTO
+    public function register(UserCreateDTO $userCreateDTO): array
     {
         $user = User::create([
             'name' => $userCreateDTO->name,
@@ -21,8 +21,12 @@ class UserService
             'user_id' => $user->id,
             'amount' => 0.0,
         ]);
-
-        return new UserDTO($user->id, $user->name, $user->email);
+        $token = $user->createToken('api-token')->plainTextToken;
+        $userDTO = new UserDTO($user->id, $user->name, $user->email);
+        return [
+            'token' => $token,
+            'user' => $userDTO,
+        ];
     }
 
     public function login(string $email, string $password): array
@@ -32,8 +36,13 @@ class UserService
             return ['error' => true, 'message' => 'Неверные данные', 'status' => 401];
         }
         $token = $user->createToken('api-token')->plainTextToken;
-
-        return ['error' => false, 'message' => 'Успешно', 'token' => $token];
+        $userDTO = new UserDTO($user->id, $user->name, $user->email);
+        return [
+            'error' => false,
+            'message' => 'Успешно',
+            'token' => $token,
+            'user' => $userDTO,
+        ];
     }
 
     public function logout($user): void

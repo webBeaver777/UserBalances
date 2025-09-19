@@ -1,10 +1,14 @@
 <template>
   <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
     <div class="container-fluid">
-      <span class="navbar-brand">Админ-панель</span>
-      <div class="d-flex align-items-center">
-        <span v-if="user" class="me-3">{{ user.name || user.email }}</span>
-        <button v-if="user" class="btn btn-outline-secondary btn-sm" @click="handleLogout">Выйти</button>
+      <span class="navbar-brand">Баланс пользователя</span>
+      <div class="d-flex align-items-center ms-auto">
+        <span v-if="user" class="me-3 fw-bold text-primary">
+          <i class="bi bi-person-circle me-1"></i>{{ user.email }}
+        </span>
+        <button v-if="user" class="btn btn-outline-danger btn-sm" @click="handleLogout">
+          <i class="bi bi-box-arrow-right me-1"></i>Выйти
+        </button>
       </div>
     </div>
   </nav>

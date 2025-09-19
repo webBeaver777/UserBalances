@@ -21,7 +21,10 @@ class ApiTest extends TestCase
             'password' => 'password123',
         ]);
         $response->assertStatus(200)
-            ->assertJsonStructure(['id', 'name', 'email']);
+            ->assertJsonStructure([
+                'token',
+                'user' => ['id', 'name', 'email']
+            ]);
 
         // Логин
         $response = $this->postJson('/api/login', [
@@ -29,7 +32,11 @@ class ApiTest extends TestCase
             'password' => 'password123',
         ]);
         $response->assertStatus(200)
-            ->assertJson(['message' => 'Успешно']);
+            ->assertJsonStructure([
+                'message',
+                'token',
+                'user' => ['id', 'name', 'email']
+            ]);
 
         // Получение текущего пользователя
         $user = User::first();
