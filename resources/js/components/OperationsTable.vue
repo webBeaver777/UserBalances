@@ -28,17 +28,6 @@
         <span class="text-muted me-3">
           Всего операций: {{ operationStore.totalCount }}
         </span>
-        <div class="dropdown" v-if="showPerPageSelector">
-          <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-            {{ operationStore.perPage }} на странице
-          </button>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#" @click.prevent="operationStore.setPerPage(10)">10 на странице</a></li>
-            <li><a class="dropdown-item" href="#" @click.prevent="operationStore.setPerPage(25)">25 на странице</a></li>
-            <li><a class="dropdown-item" href="#" @click.prevent="operationStore.setPerPage(50)">50 на странице</a></li>
-            <li><a class="dropdown-item" href="#" @click.prevent="operationStore.setPerPage(100)">100 на странице</a></li>
-          </ul>
-        </div>
       </div>
     </div>
 
@@ -66,11 +55,14 @@
                 scope="col"
                 @click="operationStore.toggleSort()"
                 style="cursor: pointer;"
-                class="user-select-none"
+                class="user-select-none sortable-header"
                 v-if="showSorting"
               >
                 Дата
-                <i :class="operationStore.sortDesc ? 'bi bi-arrow-down' : 'bi bi-arrow-up'" class="ms-1"></i>
+                <span
+                  class="sort-arrow"
+                  style="color: white !important; font-size: 1.4em !important; margin-left: 8px !important;"
+                >{{ operationStore.sortDesc ? '↓' : '↑' }}</span>
               </th>
               <th scope="col" v-else>Дата</th>
               <th scope="col">Статус</th>
@@ -142,13 +134,31 @@
 
       <!-- Пагинация -->
       <nav v-if="showPagination && operationStore.totalPages > 1" aria-label="Навигация по страницам" class="mt-4">
-        <ul class="pagination justify-content-center">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="text-muted small">
+            Показано {{ operationStore.startItem }}-{{ operationStore.endItem }} из {{ operationStore.totalCount }} записей
+          </div>
+          <div class="text-muted small">
+            Страница {{ operationStore.currentPage }} из {{ operationStore.totalPages }}
+          </div>
+        </div>
+
+        <ul class="pagination justify-content-center mb-0">
+          <!-- Первая страница -->
           <li class="page-item" :class="{ disabled: operationStore.currentPage === 1 }">
-            <a class="page-link" href="#" @click.prevent="operationStore.setPage(operationStore.currentPage - 1)">
+            <a class="page-link" href="#" @click.prevent="operationStore.setPage(1)" title="Первая страница">
+              <i class="bi bi-chevron-double-left"></i>
+            </a>
+          </li>
+
+          <!-- Предыдущая страница -->
+          <li class="page-item" :class="{ disabled: operationStore.currentPage === 1 }">
+            <a class="page-link" href="#" @click.prevent="operationStore.setPage(operationStore.currentPage - 1)" title="Предыдущая страница">
               <i class="bi bi-chevron-left"></i>
             </a>
           </li>
 
+          <!-- Номера страниц -->
           <li
             v-for="page in operationStore.visiblePages"
             :key="page"
@@ -158,16 +168,20 @@
             <a class="page-link" href="#" @click.prevent="operationStore.setPage(page)">{{ page }}</a>
           </li>
 
+          <!-- Следующая страница -->
           <li class="page-item" :class="{ disabled: operationStore.currentPage === operationStore.totalPages }">
-            <a class="page-link" href="#" @click.prevent="operationStore.setPage(operationStore.currentPage + 1)">
+            <a class="page-link" href="#" @click.prevent="operationStore.setPage(operationStore.currentPage + 1)" title="Следующая страница">
               <i class="bi bi-chevron-right"></i>
             </a>
           </li>
-        </ul>
 
-        <div class="text-center text-muted small mt-2">
-          Показано {{ operationStore.startItem }}-{{ operationStore.endItem }} из {{ operationStore.totalCount }} записей
-        </div>
+          <!-- Последняя страница -->
+          <li class="page-item" :class="{ disabled: operationStore.currentPage === operationStore.totalPages }">
+            <a class="page-link" href="#" @click.prevent="operationStore.setPage(operationStore.totalPages)" title="Последняя страница">
+              <i class="bi bi-chevron-double-right"></i>
+            </a>
+          </li>
+        </ul>
       </nav>
     </div>
   </div>
@@ -219,11 +233,14 @@ let searchTimeout;
 function onSearchInput(event) {
   const value = event.target.value;
 
-  // Задержка поиска для уменьшения количества запросов
+  // Немедленно обновляем значение в store
+  operationStore.search = value;
+
+  // Задержка для поиска на сервере для уменьшения количества запросов
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
     operationStore.setSearch(value);
-  }, 500);
+  }, 300); // Уменьшил задержку до 300мс для более отзывчивого поиска
 }
 
 // Инициализация tooltips
@@ -267,29 +284,116 @@ watch(() => operationStore.operations, initTooltips);
 .pagination .page-link {
   color: #495057;
   border-color: #dee2e6;
+  transition: all 0.2s ease-in-out;
+  border-radius: 0.375rem;
+  margin: 0 2px;
+  min-width: 40px;
+  text-align: center;
 }
 
 .pagination .page-item.active .page-link {
   background-color: #007bff;
   border-color: #007bff;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
 }
 
 .pagination .page-link:hover {
   color: #0056b3;
   background-color: #e9ecef;
   border-color: #dee2e6;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.pagination .page-item.disabled .page-link:hover {
+  transform: none;
+  box-shadow: none;
+  background-color: #fff;
+  color: #6c757d;
+}
+
+.dropdown-item.active {
+  background-color: #007bff;
+  color: white;
+}
+
+.dropdown-header {
+  font-weight: 600;
+  color: #495057;
 }
 
 .user-select-none {
   user-select: none;
 }
 
+/* Стили для стрелки сортировки */
+.sort-arrow {
+  color: #ffffff !important;
+  font-size: 1.2em !important;
+  font-weight: bold !important;
+  display: inline-block !important;
+  margin-left: 8px !important;
+}
+
+/* При наведении делаем стрелку еще более заметной */
+.sortable-header:hover .sort-arrow {
+  color: #ffc107 !important;
+  transform: scale(1.4) !important;
+  text-shadow: 0 0 3px rgba(255, 193, 7, 0.8) !important;
+}
+
+/* Стили для сортируемого заголовка */
+.sortable-header {
+  position: relative;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+/* Делаем стрелку сортировки белой и заметной всегда */
+.sortable-header .bi {
+  color: #ffffff !important;
+  font-size: 1.1em;
+  margin-left: 8px;
+}
+
+/* При наведении на заголовок Дата - НЕ меняем фон, только стрелку */
+.table-dark .sortable-header:hover {
+  background-color: #212529 !important;
+  color: #ffffff !important;
+}
+
+/* Делаем стрелку сортировки более заметной при наведении */
+.sortable-header:hover .bi {
+  color: #ffc107 !important;
+  transform: scale(1.3);
+  transition: all 0.2s ease-in-out;
+}
+
+/* Переопределяем все возможные Bootstrap стили которые могут мешать */
+.table-dark th.sortable-header:hover,
+.table-dark thead th.sortable-header:hover {
+  background-color: #212529 !important;
+  color: #ffffff !important;
+  border-color: #32383e !important;
+}
+
+/* Убираем все старые конфликтующие стили */
 th[style*="cursor"] {
-  transition: background-color 0.2s;
+  /* Очищаем старые стили */
 }
 
 th[style*="cursor"]:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  /* Очищаем старые стили */
+}
+
+th[style*="cursor"]:hover i {
+  /* Очищаем старые стили */
+}
+
+th[style*="cursor"]:hover::after {
+  display: none !important;
 }
 
 .input-group-text {

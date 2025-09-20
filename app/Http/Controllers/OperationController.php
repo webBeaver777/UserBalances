@@ -16,10 +16,25 @@ class OperationController extends Controller
     public function index(Request $request): JsonResponse
     {
         $userId = Auth::id();
-        $description = $request->input('description');
-        $operations = $this->operationService->searchOperations($userId, $description);
 
-        return response()->json($operations);
+        // Получаем параметры из запроса
+        $search = $request->input('search');
+        $page = (int) $request->input('page', 1);
+        $perPage = (int) $request->input('per_page', 25);
+        $sortDesc = $request->boolean('sort_desc', true);
+
+        // Если есть лимит (для Dashboard), используем его вместо пагинации
+        $limit = $request->input('limit');
+        if ($limit) {
+            $operations = $this->operationService->getOperationsWithLimit($userId, $search, $sortDesc, (int) $limit);
+
+            return response()->json($operations);
+        }
+
+        // Иначе используем пагинацию
+        $result = $this->operationService->getOperationsWithPagination($userId, $search, $sortDesc, $page, $perPage);
+
+        return response()->json($result);
     }
 
     public function store(StoreOperationRequest $storeOperationRequest): JsonResponse

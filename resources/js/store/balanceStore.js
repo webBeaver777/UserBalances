@@ -16,7 +16,9 @@ export const useBalanceStore = defineStore('balance', () => {
     error.value = null;
     try {
       const response = await api.getBalance();
-      balance.value = response.data?.balance ?? 0;
+      // Преобразуем строковое значение в число
+      const balanceValue = response.data?.balance;
+      balance.value = balanceValue ? parseFloat(balanceValue) : 0;
     } catch (e) {
       error.value = 'Ошибка загрузки баланса';
       balance.value = null;

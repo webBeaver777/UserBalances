@@ -40,6 +40,7 @@ class OperationService
                 $balance->amount += $operationCreateDTO->amount;
             }
             $balance->save();
+
             // Операция успешна
             return Operation::create([
                 'user_id' => $operationCreateDTO->userId,
@@ -93,5 +94,61 @@ class OperationService
         );
 
         return $this->store($operationCreateDTO);
+    }
+
+    public function getOperationsWithPagination(int $userId, ?string $search = null, bool $sortDesc = true, int $page = 1, int $perPage = 25): array
+    {
+        $query = Operation::where('user_id', $userId);
+
+        // Добавляем поиск по описанию
+        if ($search) {
+            $query->where('description', 'like', '%'.$search.'%');
+        }
+
+        // Добавляем сортировку по дате
+        if ($sortDesc) {
+            $query->orderByDesc('created_at');
+        } else {
+            $query->orderBy('created_at');
+        }
+
+        // Получаем общее количество записей
+        $total = $query->count();
+
+        // Применяем пагинацию
+        $operations = $query->skip(($page - 1) * $perPage)
+            ->take($perPage)
+            ->get();
+
+        return [
+            'data' => $operations,
+            'total' => $total,
+            'current_page' => $page,
+            'per_page' => $perPage,
+            'last_page' => ceil($total / $perPage),
+            'from' => $total > 0 ? ($page - 1) * $perPage + 1 : 0,
+            'to' => min($page * $perPage, $total),
+        ];
+    }
+
+    public function getOperationsWithLimit(int $userId, ?string $search = null, bool $sortDesc = true, int $limit = 5): array
+    {
+        $query = Operation::where('user_id', $userId);
+
+        // Добавляем поиск по описанию
+        if ($search) {
+            $query->where('description', 'like', '%'.$search.'%');
+        }
+
+        // Добавляем сортировку по дате
+        if ($sortDesc) {
+            $query->orderByDesc('created_at');
+        } else {
+            $query->orderBy('created_at');
+        }
+
+        $operations = $query->limit($limit)->get();
+
+        return $operations->toArray();
     }
 }

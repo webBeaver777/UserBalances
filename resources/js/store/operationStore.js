@@ -14,7 +14,7 @@ export const useOperationStore = defineStore('operation', () => {
 
   // Параметры пагинации
   const currentPage = ref(1);
-  const perPage = ref(25);
+  const perPage = ref(10); // Уменьшаем до 10 записей на странице для демонстрации пагинации
   const totalCount = ref(0);
 
   // Вычисляемые свойства для пагинации
@@ -79,32 +79,65 @@ export const useOperationStore = defineStore('operation', () => {
         ...params
       };
 
+      console.log('Отправляем запрос с параметрами:', requestParams);
+
       const response = await api.getOperations(requestParams);
+      console.log('Получили ответ от API:', response.data);
+      console.log('Структура ответа:', {
+        hasData: !!response.data.data,
+        hasTotal: typeof response.data.total === 'number',
+        isArray: Array.isArray(response.data),
+        keys: Object.keys(response.data || {})
+      });
 
       if (response.data) {
-        let operationsData = [];
-        let totalData = 0;
+        // Проверяем структуру ответа
+        if (response.data.data && typeof response.data.total === 'number') {
+          // Серверная пагинация - API возвращает объект с data и meta-информацией
+          operations.value = response.data.data;
+          totalCount.value = response.data.total;
 
-        if (response.data.data && response.data.total !== undefined) {
-          // Серверная пагинация
-          operationsData = response.data.data;
-          totalData = response.data.total;
+          // Обновляем текущую страницу если она передана в ответе
+          if (response.data.current_page) {
+            currentPage.value = response.data.current_page;
+          }
+
+          console.log('Используем серверную пагинацию:', {
+            operations: operations.value.length,
+            total: totalCount.value,
+            page: currentPage.value
+          });
         } else {
-          // Простой массив
-          operationsData = response.data || [];
-          totalData = operationsData.length;
-        }
+          // Простой массив операций - применяем клиентскую пагинацию
+          const operationsData = Array.isArray(response.data) ? response.data : [];
 
-        // Если задан лимит, обрезаем результат
-        if (params.limit && operationsData.length > params.limit) {
-          operationsData = operationsData.slice(0, params.limit);
-          totalData = operationsData.length;
-        }
+          // Если задан лимит (для Dashboard), просто возвращаем данные как есть
+          if (params.limit) {
+            operations.value = operationsData.slice(0, params.limit);
+            totalCount.value = operationsData.length;
+          } else {
+            // Применяем клиентскую пагинацию для страницы History
+            const startIndex = (currentPage.value - 1) * perPage.value;
+            const endIndex = startIndex + perPage.value;
 
-        operations.value = operationsData;
-        totalCount.value = totalData;
+            operations.value = operationsData.slice(startIndex, endIndex);
+            totalCount.value = operationsData.length;
+          }
+
+          console.log('Используем клиентскую пагинацию:', {
+            totalOperations: operationsData.length,
+            displayedOperations: operations.value.length,
+            currentPage: currentPage.value,
+            perPage: perPage.value,
+            totalPages: Math.ceil(operationsData.length / perPage.value)
+          });
+        }
+      } else {
+        operations.value = [];
+        totalCount.value = 0;
       }
     } catch (e) {
+      console.error('Ошибка загрузки операций:', e);
       error.value = 'Ошибка загрузки операций';
       operations.value = [];
       totalCount.value = 0;

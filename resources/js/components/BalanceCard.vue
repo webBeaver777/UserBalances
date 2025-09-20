@@ -12,7 +12,7 @@
       <div v-else-if="error" class="text-danger my-4">
         {{ error }}
       </div>
-      <p v-else class="display-4 fw-bold mb-0">{{ balance ?? 0 }} ₽</p>
+      <p v-else class="display-4 fw-bold mb-0">{{ formattedBalance }} ₽</p>
     </div>
   </div>
 </template>
@@ -21,9 +21,16 @@
 export default {
   name: 'BalanceCard',
   props: {
-    balance: Number,
+    balance: [Number, String], // Разрешаем и число, и строку
     loading: Boolean,
     error: String
+  },
+  computed: {
+    formattedBalance() {
+      // Преобразуем в число и форматируем
+      const numBalance = parseFloat(this.balance) || 0;
+      return numBalance.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
   }
 };
 </script>
