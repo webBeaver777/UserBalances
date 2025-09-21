@@ -1,0 +1,32 @@
+{
+    "useTabs": true,
+    "singleQuote": true,
+    "trailingComma": "none",
+    "printWidth": 100,
+    "tabWidth": 4,
+    "singleAttributePerLine": true,
+    "plugins": [
+        "@shufo/prettier-plugin-blade",
+        "prettier-plugin-vue"
+    ],
+    "overrides": [
+        {
+            "files": [
+                "*.blade.php"
+            ],
+            "options": {
+                "parser": "blade",
+                "tabWidth": 4
+            }
+        },
+        {
+            "files": [
+                "*.vue"
+            ],
+            "options": {
+                "parser": "vue",
+                "tabWidth": 4
+            }
+        }
+    ]
+}

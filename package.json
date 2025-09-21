@@ -4,14 +4,18 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "format": "prettier --write \"resources/views/**/*.blade.php\" \"resources/js/**/*.vue\""
     },
     "devDependencies": {
+        "@shufo/prettier-plugin-blade": "^1.16.1",
         "@tailwindcss/vite": "^4.0.0",
         "@vitejs/plugin-vue": "^6.0.1",
         "axios": "^1.12.2",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^2.0.0",
+        "prettier": "^3.6.2",
+        "prettier-plugin-vue": "^1.1.6",
         "tailwindcss": "^4.0.0",
         "vite": "^7.0.4"
     },
