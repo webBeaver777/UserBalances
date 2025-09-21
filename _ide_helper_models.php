@@ -39,7 +39,7 @@ namespace App\Models{
  * @property string $amount
  * @property string|null $description
  * @property string $status
- * @property string|null $fail_reason
+ * @property string|null $processed_at
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\User $user
@@ -49,8 +49,8 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Operation whereAmount($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Operation whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Operation whereDescription($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Operation whereFailReason($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Operation whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Operation whereProcessedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Operation whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Operation whereType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Operation whereUpdatedAt($value)
@@ -61,6 +61,7 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * @property-read Balance|null $balance
  * @property int $id
  * @property string $name
  * @property string $email
@@ -69,7 +70,6 @@ namespace App\Models{
  * @property string|null $remember_token
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Balance|null $balance
  * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \Laravel\Sanctum\PersonalAccessToken> $tokens

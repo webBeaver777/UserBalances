@@ -19,7 +19,7 @@ class OperationController extends Controller
 
         // Получаем параметры из запроса
         $search = $request->input('search');
-        $page = (int) $request->input('page', 1);
+        $page = $request->input('page');
         $perPage = (int) $request->input('per_page', 25);
         $sortDesc = $request->boolean('sort_desc', true);
 
@@ -31,10 +31,20 @@ class OperationController extends Controller
             return response()->json($operations);
         }
 
-        // Иначе используем пагинацию
-        $result = $this->operationService->getOperationsWithPagination($userId, $search, $sortDesc, $page, $perPage);
+        // Если указана страница, используем пагинацию
+        if ($page) {
+            $result = $this->operationService->getOperationsWithPagination($userId, $search, $sortDesc, (int) $page, $perPage);
 
-        return response()->json($result);
+            return response()->json($result);
+        }
+
+        // Иначе возвращаем все операции как простой массив
+        $operations = $this->operationService->searchOperations($userId, $search);
+        if (! $sortDesc) {
+            $operations = $operations->sortBy('created_at');
+        }
+
+        return response()->json($operations->values()->toArray());
     }
 
     public function store(StoreOperationRequest $storeOperationRequest): JsonResponse

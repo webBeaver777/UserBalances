@@ -23,7 +23,7 @@ class OperationService
     {
         return DB::transaction(function () use ($operationCreateDTO) {
             $balance = Balance::where('user_id', $operationCreateDTO->userId)->lockForUpdate()->first();
-            if ($operationCreateDTO->type === 'credit') {
+            if ($operationCreateDTO->type === 'debit') {
                 if ($balance->amount < $operationCreateDTO->amount) {
                     // Операция неудачна, фиксируем причину
                     return Operation::create([
@@ -81,7 +81,7 @@ class OperationService
         if (! $balance) {
             throw new ModelNotFoundException('Баланс пользователя не найден');
         }
-        if ($type === 'credit' && $balance->amount < $amount) {
+        if ($type === 'debit' && $balance->amount < $amount) {
             throw ValidationException::withMessages([
                 'amount' => 'На балансе недостаточно средств для выполнения операции.',
             ]);
