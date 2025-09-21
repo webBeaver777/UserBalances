@@ -128,31 +128,16 @@ export const useOperationStore = defineStore('operation', () => {
     }
   }
 
+  // Создание операции (прокси к API)
+  function createOperation(data) {
+    return api.createOperation(data);
+  }
+
   // Методы управления
   function setPage(page) {
     if (page >= 1 && page <= totalPages.value) {
       currentPage.value = page;
     }
-  }
-
-  function setPerPage(newPerPage) {
-    perPage.value = newPerPage;
-    currentPage.value = 1;
-  }
-
-  function setSearch(searchValue) {
-    search.value = searchValue;
-    currentPage.value = 1;
-  }
-
-  function toggleSort() {
-    sortDesc.value = !sortDesc.value;
-    currentPage.value = 1;
-  }
-
-  function clearSearch() {
-    search.value = '';
-    currentPage.value = 1;
   }
 
   // Сброс состояния
@@ -163,12 +148,6 @@ export const useOperationStore = defineStore('operation', () => {
     search.value = '';
     sortDesc.value = true;
     error.value = null;
-  }
-
-  // Заменить список операций целиком (для SSE обновлений)
-  function replaceWith(list = []) {
-    operations.value = Array.isArray(list) ? list : [];
-    totalCount.value = operations.value.length;
   }
 
   return {
@@ -192,12 +171,8 @@ export const useOperationStore = defineStore('operation', () => {
 
     // Методы
     fetchOperations,
+    createOperation,
     setPage,
-    setPerPage,
-    setSearch,
-    toggleSort,
-    clearSearch,
-    resetState,
-    replaceWith
+    resetState
   };
 });

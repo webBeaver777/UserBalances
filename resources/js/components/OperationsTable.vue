@@ -183,6 +183,8 @@
 <script setup>
 import { onMounted, watch } from 'vue';
 import { useOperationStore } from '../store/operationStore';
+import { formatAmount } from '../utils/money';
+import { formatDate } from '../utils/date';
 
 // Пропсы для настройки компонента
 const props = defineProps({
@@ -222,14 +224,6 @@ const props = defineProps({
 
 const operationStore = useOperationStore();
 
-const formatAmount = (amount, type) => {
-	const prefix = type === 'deposit' ? '+' : '-';
-	return `${prefix}${new Intl.NumberFormat('ru-RU', {
-		style: 'currency',
-		currency: 'RUB'
-	}).format(amount)}`;
-};
-
 const getStatusLabel = (status) => {
 	const labels = {
 		pending: 'Ожидание',
@@ -246,17 +240,6 @@ const getStatusClass = (status) => {
 		failed: 'bg-danger'
 	};
 	return classes[status] || 'bg-secondary';
-};
-
-const formatDate = (dateString) => {
-	const date = new Date(dateString);
-	return new Intl.DateTimeFormat('ru-RU', {
-		year: 'numeric',
-		month: 'short',
-		day: 'numeric',
-		hour: '2-digit',
-		minute: '2-digit'
-	}).format(date);
 };
 
 // Загружаем операции при монтировании, если autoload включен

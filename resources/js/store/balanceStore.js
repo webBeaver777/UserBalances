@@ -27,7 +27,6 @@ export const useBalanceStore = defineStore('balance', {
 
       try {
         const response = await api.getBalance()
-        console.log('Balance API response:', response.data)
 
         if (response.data && response.data.success) {
           // API возвращает { success: true, balance: number }
@@ -40,19 +39,12 @@ export const useBalanceStore = defineStore('balance', {
           this.balance = { userId: null, amount: 0 }
         }
 
-        console.log('Balance updated:', this.balance)
-
       } catch (error) {
         this.error = error.response?.data?.message || 'Ошибка загрузки баланса'
-        console.error('Error fetching balance:', error)
         this.balance = { userId: null, amount: 0 }
       } finally {
         this.loading = false
       }
-    },
-
-    setAmount(amount) {
-      this.balance.amount = Number(amount) || 0
     },
 
     // Ожидаем изменения баланса после постановки операции в очередь

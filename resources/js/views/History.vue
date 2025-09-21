@@ -26,7 +26,7 @@
 								class="breadcrumb-item active"
 								aria-current="page"
 							>
-								История операций
+								 История операций
 							</li>
 
 						</ol>
@@ -203,7 +203,7 @@
 											</td>
 
 											<td class="text-nowrap">
-												{{ formatDate(operation.created_at) }}
+												 {{ formatDate(operation.created_at) }}
 											</td>
 
 											<td>
@@ -317,8 +317,10 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, watch } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 import { useOperationStore } from '../store/operationStore';
+import { formatAmount } from '../utils/money';
+import { formatDate } from '../utils/date';
 
 const operationStore = useOperationStore();
 
@@ -333,26 +335,6 @@ const REFRESH_INTERVAL = 10000; // 10 секунд для истории
 // Таймер для задержки поиска
 let searchTimer = null;
 const SEARCH_DELAY = 500;
-
-// Методы форматирования
-const formatAmount = (amount, type) => {
-	const prefix = type === 'deposit' ? '+' : '-';
-	return `${prefix}${new Intl.NumberFormat('ru-RU', {
-		style: 'currency',
-		currency: 'RUB'
-	}).format(amount)}`;
-};
-
-const formatDate = (dateString) => {
-	const date = new Date(dateString);
-	return new Intl.DateTimeFormat('ru-RU', {
-		day: 'numeric',
-		month: 'short',
-		year: 'numeric',
-		hour: '2-digit',
-		minute: '2-digit'
-	}).format(date);
-};
 
 const highlightSearch = (text) => {
 	if (!searchQuery.value || !text) return text;

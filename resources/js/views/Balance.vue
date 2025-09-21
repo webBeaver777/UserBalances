@@ -97,14 +97,14 @@
 								v-if="error"
 								class="alert alert-danger mt-3"
 							>
-								{{ error }}
+								 {{ error }}
 							</div>
 
 							<div
 								v-if="successMessage"
 								class="alert alert-success mt-3"
 							>
-								{{ successMessage }}
+								 {{ successMessage }}
 							</div>
 
 						</div>
@@ -226,7 +226,7 @@
 											<td>{{ operation.description || '—' }}</td>
 
 											<td class="text-nowrap small">
-												{{ formatDate(operation.created_at) }}
+												 {{ formatDate(operation.created_at) }}
 											</td>
 
 											<td>
@@ -259,7 +259,8 @@
 import { ref, reactive, onMounted, onUnmounted } from 'vue';
 import { useBalanceStore } from '../store/balanceStore';
 import { useOperationStore } from '../store/operationStore';
-import api from '../api';
+import { formatAmount } from '../utils/money';
+import { formatDate } from '../utils/date';
 import BalanceCard from '../components/BalanceCard.vue';
 
 const balanceStore = useBalanceStore();
@@ -279,23 +280,6 @@ const syncingBalance = ref(false);
 // Таймер автообновления (polling)
 let refreshTimer = null;
 const REFRESH_INTERVAL = 5000; // 5 секунд
-
-// Методы форматирования
-const formatAmount = (amount, type) => {
-	const prefix = type === 'deposit' ? '+' : '-';
-	return `${prefix}${new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(amount)}`;
-};
-
-const formatDate = (dateString) => {
-	const date = new Date(dateString);
-	return new Intl.DateTimeFormat('ru-RU', {
-		day: 'numeric',
-		month: 'short',
-		year: 'numeric',
-		hour: '2-digit',
-		minute: '2-digit'
-	}).format(date);
-};
 
 // Загрузка 5 последних операций
 const loadOperations = async () => {
@@ -345,7 +329,7 @@ const handleSubmit = async () => {
 	try {
 		const initialAmount = balanceStore.balance.amount;
 
-		const { data } = await api.createOperation({
+		const { data } = await operationStore.createOperation({
 			type: form.type,
 			amount: form.amount,
 			description: form.description

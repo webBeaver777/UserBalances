@@ -220,11 +220,11 @@
 											class="text-truncate"
 											style="max-width: 150px"
 										>
-											{{ operation.description || '—' }}
+											 {{ operation.description || '—' }}
 										</td>
 
 										<td class="text-nowrap small">
-											{{ formatDate(operation.created_at) }}
+											 {{ formatDate(operation.created_at) }}
 										</td>
 
 										<td> <span class="badge bg-success"> Выполнено </span> </td>
@@ -253,7 +253,8 @@
 import { onMounted, onUnmounted, ref, reactive } from 'vue';
 import { useBalanceStore } from '../store/balanceStore';
 import { useOperationStore } from '../store/operationStore';
-import api from '../api';
+import { formatAmount } from '../utils/money';
+import { formatDate } from '../utils/date';
 import BalanceCard from '../components/BalanceCard.vue';
 
 const balanceStore = useBalanceStore();
@@ -274,26 +275,6 @@ const successMessage = ref('');
 let refreshTimer = null;
 const REFRESH_INTERVAL = 5000; // 5 секунд
 
-// Методы форматирования
-const formatAmount = (amount, type) => {
-	const prefix = type === 'deposit' ? '+' : '-';
-	return `${prefix}${new Intl.NumberFormat('ru-RU', {
-		style: 'currency',
-		currency: 'RUB'
-	}).format(amount)}`;
-};
-
-const formatDate = (dateString) => {
-	const date = new Date(dateString);
-	return new Intl.DateTimeFormat('ru-RU', {
-		day: 'numeric',
-		month: 'short',
-		year: 'numeric',
-		hour: '2-digit',
-		minute: '2-digit'
-	}).format(date);
-};
-
 // Обработка создания операции
 const handleSubmit = async () => {
 	if (!form.type || !form.amount || !form.description) {
@@ -306,7 +287,7 @@ const handleSubmit = async () => {
 	successMessage.value = '';
 
 	try {
-		const response = await api.createOperation({
+		const response = await operationStore.createOperation({
 			type: form.type,
 			amount: form.amount,
 			description: form.description
