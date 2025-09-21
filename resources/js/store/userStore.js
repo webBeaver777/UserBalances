@@ -1,108 +1,93 @@
-import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
-import api from '../api';
+import { defineStore } from 'pinia'
+import api from '../api'
 
-function saveUserToStorage(userData) {
-  localStorage.setItem('user', JSON.stringify(userData));
-}
-function saveTokenToStorage(token) {
-  localStorage.setItem('token', token);
-}
-function removeUserFromStorage() {
-  localStorage.removeItem('user');
-}
-function removeTokenFromStorage() {
-  localStorage.removeItem('token');
-}
-function getUserFromStorage() {
-  const savedUser = localStorage.getItem('user');
-  return savedUser && savedUser !== 'undefined' ? JSON.parse(savedUser) : null;
-}
-function getTokenFromStorage() {
-  return localStorage.getItem('token');
-}
+export const useUserStore = defineStore('user', {
+  state: () => ({
+    user: null,
+    token: localStorage.getItem('auth_token'),
+    loading: false,
+    error: null
+  }),
 
-export const useUserStore = defineStore('user', () => {
-  const user = ref(null);
-  const token = ref(getTokenFromStorage() || null);
-  const isAuthenticated = computed(() => !!token.value);
+  getters: {
+    isAuthenticated: (state) => !!state.token && !!state.user,
+    userName: (state) => state.user?.name || 'Пользователь'
+  },
 
-  function setUser(userData, userToken) {
-    if (!userData || !userData.email) {
-      logout();
-      return;
-    }
-    user.value = userData;
-    token.value = userToken;
-    saveTokenToStorage(userToken);
-    saveUserToStorage(userData);
-  }
+  actions: {
+    async login(credentials) {
+      this.loading = true
+      this.error = null
 
-  function restore() {
-    const savedUser = getUserFromStorage();
-    const savedToken = getTokenFromStorage();
-    if (savedToken) {
-      token.value = savedToken;
-      user.value = savedUser;
-    } else {
-      user.value = null;
-      token.value = null;
-    }
-  }
+      try {
+        const response = await api.login(credentials)
+        const { user, token } = response.data
 
-  async function login(email, password) {
-    try {
-      const response = await api.login({ email, password });
-      const { user: userData, token: userToken } = response.data;
-      if (!userData || !userData.email) {
-        await logout();
-        return false;
+        this.user = user
+        this.token = token
+        localStorage.setItem('auth_token', token)
+
+        return user
+      } catch (error) {
+        this.error = error.response?.data?.message || 'Ошибка входа'
+        throw error
+      } finally {
+        this.loading = false
       }
-      setUser(userData, userToken);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
+    },
 
-  async function register(name, email, password, password_confirmation) {
-    try {
-      const response = await api.register({ name, email, password, password_confirmation });
-      const { user: userData, token: userToken } = response.data;
-      if (!userData || !userData.email) {
-        await logout();
-        return false;
+    async register(userData) {
+      this.loading = true
+      this.error = null
+
+      try {
+        const response = await api.register(userData)
+        const { user, token } = response.data
+
+        this.user = user
+        this.token = token
+        localStorage.setItem('auth_token', token)
+
+        return user
+      } catch (error) {
+        this.error = error.response?.data?.message || 'Ошибка регистрации'
+        throw error
+      } finally {
+        this.loading = false
       }
-      setUser(userData, userToken);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
+    },
 
-  async function logout() {
-    try {
-      await api.logout();
-    } catch (e) {}
-    user.value = null;
-    token.value = null;
-    removeTokenFromStorage();
-    removeUserFromStorage();
-  }
-
-  async function fetchUser() {
-    try {
-      const response = await api.getUser();
-      if (!response.data || !response.data.email) {
-        await logout();
-        return;
+    async logout() {
+      try {
+        if (this.token) {
+          await api.logout()
+        }
+      } catch (error) {
+        console.error('Logout error:', error)
+      } finally {
+        this.user = null
+        this.token = null
+        localStorage.removeItem('auth_token')
       }
-      user.value = response.data;
-      saveUserToStorage(response.data);
-    } catch (e) {
-      await logout();
+    },
+
+    async fetchUser() {
+      if (!this.token) return
+
+      try {
+        const response = await api.me()
+        this.user = response.data.user
+      } catch (error) {
+        console.error('Fetch user error:', error)
+        this.logout()
+      }
+    },
+
+    // Инициализация при загрузке приложения
+    async initializeAuth() {
+      if (this.token) {
+        await this.fetchUser()
+      }
     }
   }
-
-  return { user, token, isAuthenticated, setUser, restore, logout, login, register, fetchUser };
-});
+})

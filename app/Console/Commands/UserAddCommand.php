@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\DTO\UserCreateDTO;
 use App\Services\UserService;
 use Illuminate\Console\Command;
 
@@ -10,21 +9,34 @@ class UserAddCommand extends Command
 {
     protected $signature = 'user:add {name} {email} {password}';
 
-    protected $description = 'Добавить пользователя';
+    protected $description = 'Создать нового пользователя';
 
-    public function handle(UserService $userService): void
+    public function __construct(private readonly UserService $userService)
     {
-        $userCreateDTO = new UserCreateDTO(
-            $this->argument('name'),
-            $this->argument('email'),
-            $this->argument('password')
-        );
+        parent::__construct();
+    }
+
+    public function handle(): void
+    {
+        $name = $this->argument('name');
+        $email = $this->argument('email');
+        $password = $this->argument('password');
+
+        // Проверяем, не существует ли уже пользователь с таким email
+        if ($this->userService->findByEmail($email) instanceof \App\Models\User) {
+            $this->error("Пользователь с email {$email} уже существует");
+            return;
+        }
+
         try {
-            $result = $userService->register($userCreateDTO);
-            $userDTO = $result['user'];
-            $this->info('Пользователь добавлен: '.$userDTO->email);
+            $user = $this->userService->createUser($name, $email, $password);
+
+            $this->info("Пользователь создан успешно: {$user->name} ({$user->email})");
+            $this->info("ID пользователя: {$user->id}");
+            $this->info("Начальный баланс: {$user->getBalanceAmount()} ₽");
+
         } catch (\Exception $e) {
-            $this->error($e->getMessage());
+            $this->error('Ошибка при создании пользователя: '.$e->getMessage());
         }
     }
 }

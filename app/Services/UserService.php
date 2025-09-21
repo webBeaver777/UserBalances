@@ -3,64 +3,32 @@
 namespace App\Services;
 
 use App\DTO\UserCreateDTO;
-use App\DTO\UserDTO;
-use App\Models\Balance;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 class UserService
 {
-    public function register(UserCreateDTO $userCreateDTO): array
+    public function createUser(string $name, string $email, string $password): User
     {
         $user = User::create([
-            'name' => $userCreateDTO->name,
-            'email' => $userCreateDTO->email,
-            'password' => bcrypt($userCreateDTO->password),
+            'name' => $name,
+            'email' => $email,
+            'password' => Hash::make($password),
         ]);
-        // Создаём баланс пользователя
-        Balance::create([
-            'user_id' => $user->id,
-            'amount' => 0.0,
-        ]);
-        $token = $user->createToken('api-token')->plainTextToken;
-        $userDTO = new UserDTO($user->id, $user->name, $user->email);
 
-        return [
-            'token' => $token,
-            'user' => $userDTO,
-        ];
+        // Создаем баланс для нового пользователя
+        $user->ensureBalance();
+
+        return $user;
     }
 
-    public function login(string $email, string $password): array
+    public function findByEmail(string $email): ?User
     {
-        $user = User::where('email', $email)->first();
-        if (! $user || ! \Hash::check($password, $user->password)) {
-            return ['error' => true, 'message' => 'Неверные данные', 'status' => 401];
-        }
-        $token = $user->createToken('api-token')->plainTextToken;
-        $userDTO = new UserDTO($user->id, $user->name, $user->email);
-
-        return [
-            'error' => false,
-            'message' => 'Успешно',
-            'token' => $token,
-            'user' => $userDTO,
-        ];
+        return User::where('email', $email)->first();
     }
 
-    public function logout($user): void
+    public function getUserWithBalance(int $userId): User
     {
-        $token = $user ? $user->currentAccessToken() : null;
-        if ($token) {
-            $token->delete();
-        }
-    }
-
-    public function me($user): array
-    {
-        return [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-        ];
+        return User::with('balance')->findOrFail($userId);
     }
 }

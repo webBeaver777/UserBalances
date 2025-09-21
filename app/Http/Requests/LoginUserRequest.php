@@ -14,8 +14,17 @@ class LoginUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => 'required|email',
+            'email' => 'required|string|email',
             'password' => 'required|string',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'email.required' => 'Email обязателен для заполнения',
+            'email.email' => 'Некорректный формат email',
+            'password.required' => 'Пароль обязателен для заполнения',
         ];
     }
 }

@@ -13,6 +13,9 @@ return new class extends Migration
             $blueprint->foreignId('user_id')->constrained()->onDelete('cascade');
             $blueprint->decimal('amount', 15, 2)->default(0);
             $blueprint->timestamps();
+
+            $blueprint->unique('user_id');
+            $blueprint->index('user_id');
         });
     }
 

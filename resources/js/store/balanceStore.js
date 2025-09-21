@@ -1,31 +1,69 @@
-import { defineStore } from 'pinia';
-import { ref } from 'vue';
-import api from '../api';
+import { defineStore } from 'pinia'
+import api from '../api'
 
-export const useBalanceStore = defineStore('balance', () => {
-  const balance = ref(null);
-  const loading = ref(false);
-  const error = ref(null);
+export const useBalanceStore = defineStore('balance', {
+  state: () => ({
+    balance: {
+      userId: null,
+      amount: 0
+    },
+    loading: false,
+    error: null
+  }),
 
-  function setBalance(val) {
-    balance.value = val;
-  }
+  getters: {
+    formattedBalance: (state) => {
+      return new Intl.NumberFormat('ru-RU', {
+        style: 'currency',
+        currency: 'RUB'
+      }).format(state.balance.amount || 0)
+    }
+  },
 
-  async function fetchBalance() {
-    loading.value = true;
-    error.value = null;
-    try {
-      const response = await api.getBalance();
-      // Преобразуем строковое значение в число
-      const balanceValue = response.data?.balance;
-      balance.value = balanceValue ? parseFloat(balanceValue) : 0;
-    } catch (e) {
-      error.value = 'Ошибка загрузки баланса';
-      balance.value = null;
-    } finally {
-      loading.value = false;
+  actions: {
+    async fetchBalance() {
+      this.loading = true
+      this.error = null
+
+      try {
+        const response = await api.getBalance()
+        console.log('Balance API response:', response.data)
+
+        if (response.data && response.data.success) {
+          // API возвращает { success: true, balance: number }
+          this.balance = {
+            userId: null,
+            amount: Number(response.data.balance) || 0
+          }
+        } else {
+          // Fallback
+          this.balance = { userId: null, amount: 0 }
+        }
+
+        console.log('Balance updated:', this.balance)
+
+      } catch (error) {
+        this.error = error.response?.data?.message || 'Ошибка загрузки баланса'
+        console.error('Error fetching balance:', error)
+        this.balance = { userId: null, amount: 0 }
+      } finally {
+        this.loading = false
+      }
+    },
+
+    // Ожидаем изменения баланса после постановки операции в очередь
+    async waitForBalanceChange(initialAmount, timeoutMs = 15000, intervalMs = 1000) {
+      const start = Date.now()
+      let attempts = 0
+      while (Date.now() - start < timeoutMs) {
+        await this.fetchBalance()
+        attempts++
+        if (Number(this.balance.amount) !== Number(initialAmount)) {
+          return { changed: true, attempts, newAmount: this.balance.amount }
+        }
+        await new Promise(r => setTimeout(r, intervalMs))
+      }
+      return { changed: false, attempts, newAmount: this.balance.amount }
     }
   }
-
-  return { balance, loading, error, setBalance, fetchBalance };
-});
+})

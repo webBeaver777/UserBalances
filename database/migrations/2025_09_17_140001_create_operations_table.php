@@ -11,12 +11,15 @@ return new class extends Migration
         Schema::create('operations', function (Blueprint $blueprint): void {
             $blueprint->id();
             $blueprint->foreignId('user_id')->constrained()->onDelete('cascade');
-            $blueprint->enum('type', ['credit', 'debit']);
+            $blueprint->enum('type', ['deposit', 'withdrawal']);
             $blueprint->decimal('amount', 15, 2);
-            $blueprint->string('description')->nullable();
-            $blueprint->enum('status', ['success', 'failed'])->default('success');
-            $blueprint->string('fail_reason')->nullable();
+            $blueprint->text('description')->nullable();
+            $blueprint->enum('status', ['pending', 'completed', 'failed'])->default('pending');
             $blueprint->timestamps();
+
+            $blueprint->index(['user_id', 'created_at']);
+            $blueprint->index('status');
+            $blueprint->index('type');
         });
     }
 

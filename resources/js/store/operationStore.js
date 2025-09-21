@@ -73,9 +73,7 @@ export const useOperationStore = defineStore('operation', () => {
     try {
       const requestParams = {
         page: params.page || currentPage.value,
-        per_page: params.per_page || params.limit || perPage.value,
         search: params.search !== undefined ? params.search : search.value,
-        sort_desc: params.sort_desc !== undefined ? params.sort_desc : sortDesc.value,
         ...params
       };
 
@@ -83,53 +81,29 @@ export const useOperationStore = defineStore('operation', () => {
 
       const response = await api.getOperations(requestParams);
       console.log('Получили ответ от API:', response.data);
-      console.log('Структура ответа:', {
-        hasData: !!response.data.data,
-        hasTotal: typeof response.data.total === 'number',
-        isArray: Array.isArray(response.data),
-        keys: Object.keys(response.data || {})
-      });
 
-      if (response.data) {
-        // Проверяем структуру ответа
-        if (response.data.data && typeof response.data.total === 'number') {
-          // Серверная пагинация - API возвращает объект с data и meta-информацией
-          operations.value = response.data.data;
-          totalCount.value = response.data.total;
+      if (response.data && response.data.success) {
+        const responseData = response.data;
 
-          // Обновляем текущую страницу если она передана в ответе
-          if (response.data.current_page) {
-            currentPage.value = response.data.current_page;
-          }
+        // Проверяем есть ли пагинация в ответе
+        if (responseData.pagination && responseData.pagination.total) {
+          // Серверная пагинация
+          operations.value = responseData.data || [];
+          totalCount.value = responseData.pagination.total;
+          currentPage.value = responseData.pagination.current_page || 1;
 
-          console.log('Используем серверную пагинацию:', {
+          console.log('Серверная пагинация:', {
             operations: operations.value.length,
             total: totalCount.value,
             page: currentPage.value
           });
         } else {
-          // Простой массив операций - применяем клиентскую пагинацию
-          const operationsData = Array.isArray(response.data) ? response.data : [];
+          // Простой список без пагинации (для Dashboard с limit)
+          operations.value = responseData.data || [];
+          totalCount.value = operations.value.length;
 
-          // Если задан лимит (для Dashboard), просто возвращаем данные как есть
-          if (params.limit) {
-            operations.value = operationsData.slice(0, params.limit);
-            totalCount.value = operationsData.length;
-          } else {
-            // Применяем клиентскую пагинацию для страницы History
-            const startIndex = (currentPage.value - 1) * perPage.value;
-            const endIndex = startIndex + perPage.value;
-
-            operations.value = operationsData.slice(startIndex, endIndex);
-            totalCount.value = operationsData.length;
-          }
-
-          console.log('Используем клиентскую пагинацию:', {
-            totalOperations: operationsData.length,
-            displayedOperations: operations.value.length,
-            currentPage: currentPage.value,
-            perPage: perPage.value,
-            totalPages: Math.ceil(operationsData.length / perPage.value)
+          console.log('Простой список операций:', {
+            operations: operations.value.length
           });
         }
       } else {
@@ -150,32 +124,33 @@ export const useOperationStore = defineStore('operation', () => {
   function setPage(page) {
     if (page >= 1 && page <= totalPages.value) {
       currentPage.value = page;
-      fetchOperations();
+      // Не вызываем fetchOperations здесь, чтобы не сбросить параметры
+      // Компонент должен сам вызвать fetchOperations с нужными параметрами
     }
   }
 
   function setPerPage(newPerPage) {
     perPage.value = newPerPage;
     currentPage.value = 1;
-    fetchOperations();
+    // Не вызываем fetchOperations здесь
   }
 
   function setSearch(searchValue) {
     search.value = searchValue;
     currentPage.value = 1;
-    fetchOperations();
+    // Не вызываем fetchOperations здесь
   }
 
   function toggleSort() {
     sortDesc.value = !sortDesc.value;
     currentPage.value = 1;
-    fetchOperations();
+    // Не вызываем fetchOperations здесь
   }
 
   function clearSearch() {
     search.value = '';
     currentPage.value = 1;
-    fetchOperations();
+    // Не вызываем fetchOperations здесь
   }
 
   // Сброс состояния

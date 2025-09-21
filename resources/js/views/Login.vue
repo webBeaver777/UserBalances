@@ -1,37 +1,94 @@
 <template>
-  <form @submit.prevent="onLogin" class="mx-auto" style="max-width: 400px;">
-    <h2 class="mb-4">Вход</h2>
-    <div class="mb-3">
-      <label class="form-label">Email</label>
-      <input v-model="email" type="email" class="form-control" required />
+  <div class="login-page">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+          <div class="card">
+            <div class="card-header text-center">
+              <h3>Вход в систему</h3>
+            </div>
+            <div class="card-body">
+              <form @submit.prevent="handleLogin">
+                <div class="mb-3">
+                  <label for="email" class="form-label">Email</label>
+                  <input
+                    v-model="form.email"
+                    type="email"
+                    id="email"
+                    class="form-control"
+                    required
+                  >
+                </div>
+                <div class="mb-3">
+                  <label for="password" class="form-label">Пароль</label>
+                  <input
+                    v-model="form.password"
+                    type="password"
+                    id="password"
+                    class="form-control"
+                    required
+                  >
+                </div>
+                <div class="d-grid">
+                  <button type="submit" class="btn btn-primary" :disabled="userStore.loading">
+                    <span v-if="userStore.loading" class="spinner-border spinner-border-sm me-2"></span>
+                    {{ userStore.loading ? 'Вход...' : 'Войти' }}
+                  </button>
+                </div>
+              </form>
+              <div v-if="userStore.error" class="alert alert-danger mt-3">
+                {{ userStore.error }}
+              </div>
+              <div class="text-center mt-3">
+                <router-link to="/register">Нет аккаунта? Зарегистрироваться</router-link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="mb-3">
-      <label class="form-label">Пароль</label>
-      <input v-model="password" type="password" class="form-control" required />
-    </div>
-    <button class="btn btn-primary w-100">Войти</button>
-    <div v-if="error" class="text-danger mt-2">{{ error }}</div>
-    <div class="mt-3 text-center">
-      <router-link to="/register">Регистрация</router-link>
-    </div>
-  </form>
+  </div>
 </template>
-<script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useUserStore } from '../store/userStore';
-const email = ref('');
-const password = ref('');
-const error = ref('');
-const router = useRouter();
-const userStore = useUserStore();
-async function onLogin() {
-  error.value = '';
-  const success = await userStore.login(email.value, password.value);
-  if (success) {
-    router.push('/');
-  } else {
-    error.value = 'Неверный email или пароль';
+
+<script>
+import { reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '../store/userStore'
+
+export default {
+  name: 'Login',
+  setup() {
+    const router = useRouter()
+    const userStore = useUserStore()
+
+    const form = reactive({
+      email: '',
+      password: ''
+    })
+
+    const handleLogin = async () => {
+      try {
+        await userStore.login(form)
+        router.push('/balance')
+      } catch (error) {
+        // Ошибка уже обработана в store
+      }
+    }
+
+    return {
+      userStore,
+      form,
+      handleLogin
+    }
   }
 }
 </script>
+
+<style scoped>
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  background-color: #f8f9fa;
+}
+</style>

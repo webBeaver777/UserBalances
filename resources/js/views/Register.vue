@@ -1,61 +1,122 @@
 <template>
-  <form @submit.prevent="onRegister" class="mx-auto" style="max-width: 400px;">
-    <h2 class="mb-4">Регистрация</h2>
-    <div v-if="errors.general" class="alert alert-danger">{{ errors.general }}</div>
-    <div class="mb-3">
-      <label class="form-label">Имя</label>
-      <input v-model="name" type="text" class="form-control" required />
-      <div v-if="errors.name" class="text-danger small">{{ errors.name }}</div>
+  <div class="register-page">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+          <div class="card">
+            <div class="card-header text-center">
+              <h3>Регистрация</h3>
+            </div>
+            <div class="card-body">
+              <form @submit.prevent="handleRegister">
+                <div class="mb-3">
+                  <label for="name" class="form-label">Имя</label>
+                  <input
+                    v-model="form.name"
+                    type="text"
+                    id="name"
+                    class="form-control"
+                    required
+                  >
+                </div>
+                <div class="mb-3">
+                  <label for="email" class="form-label">Email</label>
+                  <input
+                    v-model="form.email"
+                    type="email"
+                    id="email"
+                    class="form-control"
+                    required
+                  >
+                </div>
+                <div class="mb-3">
+                  <label for="password" class="form-label">Пароль</label>
+                  <input
+                    v-model="form.password"
+                    type="password"
+                    id="password"
+                    class="form-control"
+                    required
+                    minlength="8"
+                  >
+                </div>
+                <div class="mb-3">
+                  <label for="password_confirmation" class="form-label">Подтверждение пароля</label>
+                  <input
+                    v-model="form.password_confirmation"
+                    type="password"
+                    id="password_confirmation"
+                    class="form-control"
+                    required
+                  >
+                </div>
+                <div class="d-grid">
+                  <button type="submit" class="btn btn-primary" :disabled="userStore.loading">
+                    <span v-if="userStore.loading" class="spinner-border spinner-border-sm me-2"></span>
+                    {{ userStore.loading ? 'Регистрация...' : 'Зарегистрироваться' }}
+                  </button>
+                </div>
+              </form>
+              <div v-if="userStore.error" class="alert alert-danger mt-3">
+                {{ userStore.error }}
+              </div>
+              <div class="text-center mt-3">
+                <router-link to="/login">Уже есть аккаунт? Войти</router-link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="mb-3">
-      <label class="form-label">Email</label>
-      <input v-model="email" type="email" class="form-control" required />
-      <div v-if="errors.email" class="text-danger small">{{ errors.email }}</div>
-    </div>
-    <div class="mb-3">
-      <label class="form-label">Пароль</label>
-      <input v-model="password" type="password" class="form-control" required />
-      <div v-if="errors.password" class="text-danger small">{{ errors.password }}</div>
-    </div>
-    <div class="mb-3">
-      <label class="form-label">Подтверждение пароля</label>
-      <input v-model="password_confirmation" type="password" class="form-control" required />
-      <div v-if="errors.password_confirmation" class="text-danger small">{{ errors.password_confirmation }}</div>
-    </div>
-    <button class="btn btn-primary w-100" :disabled="loading">
-      <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-      Зарегистрироваться
-    </button>
-    <div class="mt-3 text-center">
-      <router-link to="/login">Уже есть аккаунт?</router-link>
-    </div>
-  </form>
+  </div>
 </template>
-<script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useUserStore } from '../store/userStore';
-const name = ref('');
-const email = ref('');
-const password = ref('');
-const password_confirmation = ref('');
-const errors = ref({});
-const loading = ref(false);
-const router = useRouter();
-const userStore = useUserStore();
-async function onRegister() {
-  errors.value = {};
-  if (password.value !== password_confirmation.value) {
-    errors.value.password_confirmation = 'Пароли не совпадают';
-    return;
-  }
-  loading.value = true;
-  const success = await userStore.register(name.value, email.value, password.value, password_confirmation.value);
-  loading.value = false;
-  if (success) {
-    router.push('/');
-  } else {
-    errors.value.general = 'Ошибка регистрации. Проверьте введённые данные или попробуйте позже.';
+
+<script>
+import { reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '../store/userStore'
+
+export default {
+  name: 'Register',
+  setup() {
+    const router = useRouter()
+    const userStore = useUserStore()
+
+    const form = reactive({
+      name: '',
+      email: '',
+      password: '',
+      password_confirmation: ''
+    })
+
+    const handleRegister = async () => {
+      if (form.password !== form.password_confirmation) {
+        userStore.error = 'Пароли не совпадают'
+        return
+      }
+
+      try {
+        await userStore.register(form)
+        router.push('/balance')
+      } catch (error) {
+        // Ошибка уже обработана в store
+      }
+    }
+
+    return {
+      userStore,
+      form,
+      handleRegister
+    }
   }
 }
 </script>
+
+<style scoped>
+.register-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  background-color: #f8f9fa;
+}
+</style>

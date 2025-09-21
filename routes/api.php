@@ -1,8 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\OperationApiController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\BalanceController;
-use App\Http\Controllers\OperationController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -11,7 +10,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanc
 Route::get('/me', [AuthController::class, 'me'])->middleware('auth:sanctum');
 
 Route::middleware('auth:sanctum')->group(function (): void {
-    Route::get('/balance', [BalanceController::class, 'show']);
-    Route::get('/operations', [OperationController::class, 'index']);
-    Route::post('/operations', [OperationController::class, 'store']);
+    // Используем только OperationApiController для всех API операций
+    Route::get('/balance', [OperationApiController::class, 'balance']);
+    Route::get('/operations', [OperationApiController::class, 'index']);
+    Route::post('/operations', [OperationApiController::class, 'store']);
 });
