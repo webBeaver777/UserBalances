@@ -28,7 +28,8 @@ class OperationApiController extends Controller
             $user->id,
             $validated['limit'] ?? null,
             $validated['search'] ?? null,
-            $validated['page'] ?? 1
+            $validated['page'] ?? 1,
+            $validated['sort_direction'] ?? 'desc'
         );
 
         return response()->json([

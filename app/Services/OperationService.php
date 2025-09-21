@@ -41,20 +41,20 @@ class OperationService
      */
     public function processOperation(Operation $operation): void
     {
-        if (!$operation->isPending()) {
+        if (! $operation->isPending()) {
             return;
         }
 
         // Используем безопасную транзакцию с блокировками для обработки из очереди
         $transactionService = app(TransactionService::class);
 
-        $transactionService->executeWithRetry(fn() => $transactionService->executeWithUserLock(
+        $transactionService->executeWithRetry(fn () => $transactionService->executeWithUserLock(
             $operation->user_id,
             function (User $user) use ($operation): void {
                 // Перезагружаем операцию с блокировкой
                 $operation = Operation::where('id', $operation->id)->lockForUpdate()->first();
 
-                if (!$operation || !$operation->isPending()) {
+                if (! $operation || ! $operation->isPending()) {
                     return;
                 }
 
@@ -75,7 +75,7 @@ class OperationService
         } elseif ($operation->isWithdrawal()) {
             // Атомарное списание: обновление произойдет только если средств достаточно
             if (! $balance->safeSubtract($operation->amount)) {
-                throw new \Exception('Insufficient balance. Current: ' . $balance->amount . ', Required: ' . $operation->amount);
+                throw new \Exception('Insufficient balance. Current: '.$balance->amount.', Required: '.$operation->amount);
             }
         }
 
@@ -87,9 +87,11 @@ class OperationService
      * Если limit не задан - возвращает операции с пагинацией по 10 элементов
      * Если limit задан - возвращает указанное количество последних операций без пагинации
      */
-    public function getOperations(int $userId, ?int $limit = null, ?string $search = null, int $page = 1): array
+    public function getOperations(int $userId, ?int $limit = null, ?string $search = null, int $page = 1, string $sortDirection = 'desc'): array
     {
-        $query = Operation::forUser($userId)->recent();
+        $sortDirection = strtolower($sortDirection) === 'asc' ? 'asc' : 'desc';
+
+        $query = Operation::forUser($userId)->orderBy('created_at', $sortDirection);
 
         if ($search) {
             $query->searchByDescription($search);
@@ -98,6 +100,7 @@ class OperationService
         if ($limit !== null) {
             // Если limit задан - возвращаем указанное количество операций без пагинации
             $operations = $query->limit($limit)->get();
+
             return [
                 'data' => $operations,
                 'pagination' => null,

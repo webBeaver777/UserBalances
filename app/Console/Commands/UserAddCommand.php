@@ -25,6 +25,7 @@ class UserAddCommand extends Command
         // Проверяем, не существует ли уже пользователь с таким email
         if ($this->userService->findByEmail($email) instanceof \App\Models\User) {
             $this->error("Пользователь с email {$email} уже существует");
+
             return;
         }
 

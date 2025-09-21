@@ -16,7 +16,7 @@ class TransactionService
             // Блокируем пользователя для предотвращения одновременных операций
             $user = User::where('id', $userId)->lockForUpdate()->first();
 
-            if (!$user) {
+            if (! $user) {
                 throw new \Exception('User not found');
             }
 
@@ -44,15 +44,17 @@ class TransactionService
                 if ($e->getCode() === '40001' || str_contains($e->getMessage(), 'Deadlock')) {
                     $attempts++;
                     if ($attempts >= $maxRetries) {
-                        throw new \Exception('Transaction failed after ' . $maxRetries . ' attempts due to deadlock', $e->getCode(), $e);
+                        throw new \Exception('Transaction failed after '.$maxRetries.' attempts due to deadlock', $e->getCode(), $e);
                     }
                     // Небольшая задержка перед повторной попыткой
                     usleep(random_int(10000, 50000)); // 10-50ms
+
                     continue;
                 }
                 throw $e;
             }
         }
+
         return null;
     }
 }

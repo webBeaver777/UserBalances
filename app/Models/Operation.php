@@ -23,10 +23,13 @@ class Operation extends Model
     use HasFactory;
 
     const TYPE_DEPOSIT = 'deposit';
+
     const TYPE_WITHDRAWAL = 'withdrawal';
 
     const STATUS_PENDING = 'pending';
+
     const STATUS_COMPLETED = 'completed';
+
     const STATUS_FAILED = 'failed';
 
     protected $fillable = [
@@ -132,12 +135,13 @@ class Operation extends Model
     public function getFormattedAmount(): string
     {
         $prefix = $this->isDeposit() ? '+' : '-';
-        return $prefix . number_format($this->amount, 2, ',', ' ') . ' ₽';
+
+        return $prefix.number_format($this->amount, 2, ',', ' ').' ₽';
     }
 
     public function getStatusLabel(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             self::STATUS_PENDING => 'В обработке',
             self::STATUS_COMPLETED => 'Выполнено',
             self::STATUS_FAILED => 'Ошибка',
@@ -147,7 +151,7 @@ class Operation extends Model
 
     public function getTypeLabel(): string
     {
-        return match($this->type) {
+        return match ($this->type) {
             self::TYPE_DEPOSIT => 'Пополнение',
             self::TYPE_WITHDRAWAL => 'Списание',
             default => $this->type

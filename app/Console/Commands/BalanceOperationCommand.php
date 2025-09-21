@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\DTO\OperationCreateDTO;
+use App\Models\User;
 use App\Services\OperationService;
 use App\Services\UserService;
 use Illuminate\Console\Command;
@@ -23,8 +24,9 @@ class BalanceOperationCommand extends Command
     public function handle(): void
     {
         $user = $this->userService->findByEmail($this->argument('email'));
-        if (!$user instanceof \App\Models\User) {
+        if (! $user instanceof User) {
             $this->error('Пользователь не найден');
+
             return;
         }
 
@@ -35,12 +37,14 @@ class BalanceOperationCommand extends Command
         // Валидация типа операции
         if (! in_array($type, ['deposit', 'withdrawal'])) {
             $this->error('Недопустимый тип операции. Используйте: deposit или withdrawal');
+
             return;
         }
 
         // Валидация суммы
         if ($amount <= 0) {
             $this->error('Сумма должна быть больше нуля');
+
             return;
         }
 

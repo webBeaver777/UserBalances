@@ -51,6 +51,10 @@ export const useBalanceStore = defineStore('balance', {
       }
     },
 
+    setAmount(amount) {
+      this.balance.amount = Number(amount) || 0
+    },
+
     // Ожидаем изменения баланса после постановки операции в очередь
     async waitForBalanceChange(initialAmount, timeoutMs = 15000, intervalMs = 1000) {
       const start = Date.now()

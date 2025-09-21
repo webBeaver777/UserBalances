@@ -15,10 +15,10 @@ class UpdateOperationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => 'sometimes|in:' . implode(',', [
+            'status' => 'sometimes|in:'.implode(',', [
                 Operation::STATUS_PENDING,
                 Operation::STATUS_COMPLETED,
-                Operation::STATUS_FAILED
+                Operation::STATUS_FAILED,
             ]),
             'description' => 'sometimes|string|max:255|min:3',
         ];

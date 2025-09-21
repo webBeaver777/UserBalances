@@ -46,7 +46,10 @@ class User extends Authenticatable
     // Relationships
     public function balance(): HasOne
     {
-        return $this->hasOne(Balance::class);
+        // Гарантируем объект с amount=0 по умолчанию, чтобы избежать nullsafe в вычислениях
+        return $this->hasOne(Balance::class)->withDefault([
+            'amount' => 0,
+        ]);
     }
 
     public function operations(): HasMany
@@ -75,7 +78,8 @@ class User extends Authenticatable
     // Business Logic Methods
     public function getBalanceAmount(): float
     {
-        return $this->balance?->amount ?? 0.0;
+        // Благодаря withDefault() баланс всегда объект, поэтому nullsafe не требуется
+        return (float) $this->balance->amount;
     }
 
     public function ensureBalance(): Balance

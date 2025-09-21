@@ -104,7 +104,7 @@
 </template>
 
 <script setup>
-import {ref, reactive, onMounted} from 'vue'
+import {ref, reactive, onMounted, onUnmounted} from 'vue'
 import {useBalanceStore} from '../store/balanceStore'
 import {useOperationStore} from '../store/operationStore'
 import api from '../api'
@@ -124,24 +124,19 @@ const error = ref('')
 const successMessage = ref('')
 const syncingBalance = ref(false)
 
+// Таймер автообновления (polling)
+let refreshTimer = null
+const REFRESH_INTERVAL = 5000 // 5 секунд
+
 // Методы форматирования
 const formatAmount = (amount, type) => {
     const prefix = type === 'deposit' ? '+' : '-'
-    return `${prefix}${new Intl.NumberFormat('ru-RU', {
-        style: 'currency',
-        currency: 'RUB'
-    }).format(amount)}`
+    return `${prefix}${new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(amount)}`
 }
 
 const formatDate = (dateString) => {
     const date = new Date(dateString)
-    return new Intl.DateTimeFormat('ru-RU', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    }).format(date)
+    return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date)
 }
 
 // Загрузка 5 последних операций
@@ -149,13 +144,37 @@ const loadOperations = async () => {
     await operationStore.fetchOperations({ limit: 5 })
 }
 
-// Сбрасываем состояние operationStore при входе на главную страницу
+async function refreshData() {
+    try {
+        await Promise.all([
+            balanceStore.fetchBalance(),
+            loadOperations()
+        ])
+    } catch (e) {
+        console.error('Background refresh error:', e)
+    }
+}
+
+function startAutoRefresh() {
+    refreshTimer = setInterval(refreshData, REFRESH_INTERVAL)
+}
+
+function stopAutoRefresh() {
+    if (refreshTimer) {
+        clearInterval(refreshTimer)
+        refreshTimer = null
+    }
+}
+
+// Сбрасываем состояние и включаем polling вместо SSE
 onMounted(async () => {
     operationStore.resetState()
-    await Promise.all([
-        balanceStore.fetchBalance(),
-        loadOperations()
-    ])
+    await refreshData()
+    startAutoRefresh()
+})
+
+onUnmounted(() => {
+    stopAutoRefresh()
 })
 
 const handleSubmit = async () => {
@@ -183,16 +202,14 @@ const handleSubmit = async () => {
             form.amount = ''
             form.description = ''
 
-            // Ждем, пока баланс действительно изменится (операция выполнится воркером)
+            // Ждем фактического изменения баланса и затем обновляем 5 операций
             syncingBalance.value = true
             const result = await balanceStore.waitForBalanceChange(initialAmount, 20000, 800)
             syncingBalance.value = false
 
-            // После изменения баланса обновляем список 5 операций
             await loadOperations()
 
             if (!result.changed) {
-                // Если за таймаут не изменился — покажем мягкое уведомление
                 successMessage.value = 'Операция поставлена в очередь. Обновление баланса произойдет в фоне.'
             }
 

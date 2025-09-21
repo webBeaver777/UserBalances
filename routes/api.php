@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\OperationApiController;
+use App\Http\Controllers\Api\SseController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -15,3 +16,6 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/operations', [OperationApiController::class, 'index']);
     Route::post('/operations', [OperationApiController::class, 'store']);
 });
+
+Route::get('/sse/balance', [SseController::class, 'balance']);
+Route::get('/sse/operations', [SseController::class, 'operations']);

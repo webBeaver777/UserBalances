@@ -72,7 +72,7 @@ class Balance extends Model
 
         // Проверяем достаточность средств перед списанием
         if ($this->amount < $amount) {
-            throw new \Exception('Insufficient balance. Current: ' . $this->amount . ', Required: ' . $amount);
+            throw new \Exception('Insufficient balance. Current: '.$this->amount.', Required: '.$amount);
         }
 
         // Атомарное уменьшение баланса
@@ -93,13 +93,14 @@ class Balance extends Model
             ->where('id', $this->id)
             ->where('amount', '>=', $amount)
             ->update([
-                'amount' => DB::raw('amount - ' . $amount),
-                'updated_at' => now()
+                'amount' => DB::raw('amount - '.$amount),
+                'updated_at' => now(),
             ]);
 
         if ($updated) {
             // Обновляем модель после успешного изменения
             $this->refresh();
+
             return true;
         }
 
@@ -111,7 +112,7 @@ class Balance extends Model
      */
     public function getFormattedAmount(): string
     {
-        return number_format($this->amount, 2, ',', ' ') . ' ₽';
+        return number_format($this->amount, 2, ',', ' ').' ₽';
     }
 
     /**

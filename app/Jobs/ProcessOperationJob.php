@@ -2,8 +2,10 @@
 
 namespace App\Jobs;
 
+use App\Models\Balance;
 use App\Models\Operation;
 use App\Services\OperationService;
+use App\Services\RealtimeService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -19,9 +21,19 @@ class ProcessOperationJob implements ShouldQueue
 
     public function handle(OperationService $operationService): void
     {
+        $realtimeService = app(RealtimeService::class);
+
         try {
             $operation = Operation::findOrFail($this->operationId);
             $operationService->processOperation($operation);
+
+            // Обновляем данные для клиента через SSE
+            $userId = $operation->user_id;
+            // читаем баланс напрямую из БД после коммита
+            $balanceAmount = (float) (Balance::where('user_id', $userId)->value('amount') ?? 0);
+
+            $realtimeService->publishBalanceUpdated($userId, $balanceAmount);
+            $realtimeService->publishOperationsUpdated($userId, 5);
 
             Log::info('Operation processed successfully', [
                 'operation_id' => $this->operationId,
@@ -41,6 +53,11 @@ class ProcessOperationJob implements ShouldQueue
                 $operation->markAsFailed();
             }
 
+            // Сообщаем клиентам, что список операций обновился
+            if ($operation) {
+                $realtimeService->publishOperationsUpdated($operation->user_id, 5);
+            }
+
             throw $e;
         }
     }
@@ -49,13 +66,7 @@ class ProcessOperationJob implements ShouldQueue
     {
         Log::error('ProcessOperationJob failed', [
             'operation_id' => $this->operationId,
-            'error' => $throwable->getMessage(),
+            'exception' => $throwable->getMessage(),
         ]);
-
-        // Помечаем операцию как неудачную
-        $operation = Operation::find($this->operationId);
-        if ($operation && $operation->isPending()) {
-            $operation->markAsFailed();
-        }
     }
 }

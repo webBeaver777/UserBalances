@@ -17,6 +17,9 @@ export const useOperationStore = defineStore('operation', () => {
   const perPage = ref(10); // Уменьшаем до 10 записей на странице для демонстрации пагинации
   const totalCount = ref(0);
 
+  // Внутренний указатель текущего запроса (для предотвращения оверлапов)
+  let currentRequest = null;
+
   // Вычисляемые свойства для пагинации
   const totalPages = computed(() => Math.ceil(totalCount.value / perPage.value));
 
@@ -67,20 +70,29 @@ export const useOperationStore = defineStore('operation', () => {
 
   // Функция загрузки операций
   async function fetchOperations(params = {}) {
-    loading.value = true;
+    // Если уже есть активный запрос — возвращаем его, чтобы не плодить параллельные запросы
+    if (currentRequest) {
+      return currentRequest;
+    }
+
     error.value = null;
 
+    // Показываем спиннер только при первой загрузке (когда список пуст)
+    const showLoader = (operations.value.length === 0);
+    if (showLoader) {
+      loading.value = true;
+    }
+
+    const requestParams = {
+      page: params.page || currentPage.value,
+      search: params.search !== undefined ? params.search : search.value,
+      ...params
+    };
+
     try {
-      const requestParams = {
-        page: params.page || currentPage.value,
-        search: params.search !== undefined ? params.search : search.value,
-        ...params
-      };
-
-      console.log('Отправляем запрос с параметрами:', requestParams);
-
-      const response = await api.getOperations(requestParams);
-      console.log('Получили ответ от API:', response.data);
+      // Сохраняем промис текущего запроса, чтобы вернуть его при повторных вызовах
+      currentRequest = api.getOperations(requestParams);
+      const response = await currentRequest;
 
       if (response.data && response.data.success) {
         const responseData = response.data;
@@ -91,32 +103,28 @@ export const useOperationStore = defineStore('operation', () => {
           operations.value = responseData.data || [];
           totalCount.value = responseData.pagination.total;
           currentPage.value = responseData.pagination.current_page || 1;
-
-          console.log('Серверная пагинация:', {
-            operations: operations.value.length,
-            total: totalCount.value,
-            page: currentPage.value
-          });
         } else {
           // Простой список без пагинации (для Dashboard с limit)
           operations.value = responseData.data || [];
           totalCount.value = operations.value.length;
-
-          console.log('Простой список операций:', {
-            operations: operations.value.length
-          });
         }
       } else {
         operations.value = [];
         totalCount.value = 0;
       }
+
+      return response;
     } catch (e) {
       console.error('Ошибка загрузки операций:', e);
       error.value = 'Ошибка загрузки операций';
       operations.value = [];
       totalCount.value = 0;
+      throw e;
     } finally {
-      loading.value = false;
+      if (showLoader) {
+        loading.value = false;
+      }
+      currentRequest = null;
     }
   }
 
@@ -124,33 +132,27 @@ export const useOperationStore = defineStore('operation', () => {
   function setPage(page) {
     if (page >= 1 && page <= totalPages.value) {
       currentPage.value = page;
-      // Не вызываем fetchOperations здесь, чтобы не сбросить параметры
-      // Компонент должен сам вызвать fetchOperations с нужными параметрами
     }
   }
 
   function setPerPage(newPerPage) {
     perPage.value = newPerPage;
     currentPage.value = 1;
-    // Не вызываем fetchOperations здесь
   }
 
   function setSearch(searchValue) {
     search.value = searchValue;
     currentPage.value = 1;
-    // Не вызываем fetchOperations здесь
   }
 
   function toggleSort() {
     sortDesc.value = !sortDesc.value;
     currentPage.value = 1;
-    // Не вызываем fetchOperations здесь
   }
 
   function clearSearch() {
     search.value = '';
     currentPage.value = 1;
-    // Не вызываем fetchOperations здесь
   }
 
   // Сброс состояния
@@ -161,6 +163,12 @@ export const useOperationStore = defineStore('operation', () => {
     search.value = '';
     sortDesc.value = true;
     error.value = null;
+  }
+
+  // Заменить список операций целиком (для SSE обновлений)
+  function replaceWith(list = []) {
+    operations.value = Array.isArray(list) ? list : [];
+    totalCount.value = operations.value.length;
   }
 
   return {
@@ -189,6 +197,7 @@ export const useOperationStore = defineStore('operation', () => {
     setSearch,
     toggleSort,
     clearSearch,
-    resetState
+    resetState,
+    replaceWith
   };
 });
